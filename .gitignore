@@ -13,6 +13,7 @@ dist/
 
 # Large data files (SPICE kernels, DEM tiles) — not committed, see backend/data/README.md
 *.bsp
+*.bpc
 *.tpc
 *.tls
 *.tif
