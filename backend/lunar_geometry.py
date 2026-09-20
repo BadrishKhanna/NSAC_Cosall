@@ -29,6 +29,11 @@ def utc_to_et(utc_string):
     return spice.str2et(utc_string)
 
 
+def time_grid(start_utc, days, step_hours=1.0):
+    """Ephemeris times (seconds past J2000) from start_utc for `days` days."""
+    return utc_to_et(start_utc) + np.arange(0.0, days * 86400.0, step_hours * 3600.0)
+
+
 @lru_cache(maxsize=None)
 def _moon_radius_km():
     load_kernels()
@@ -44,19 +49,34 @@ def _site_basis(lat_deg, lon_deg):
     return _moon_radius_km() * up, up, east, north
 
 
-def azel_deg(body, et, lat_deg, lon_deg):
-    """(elevation, azimuth) of `body` ('SUN', 'EARTH') at a lunar site, in degrees.
-    Azimuth is measured clockwise from north. Elevation is the geometric angle of the
-    body's center above the local horizontal plane.
-    Approximations: spherical Moon, no terrain, no light-time correction."""
+def body_vectors(body, ets):
+    """Geometric position (km) of `body` ('SUN', 'EARTH') relative to the Moon's
+    center, in the Moon-fixed MOON_ME frame, for each time in `ets`. Shape (N, 3).
+    Computed once per body and time grid, then reused for any number of sites."""
     load_kernels()
+    ets = np.atleast_1d(np.asarray(ets, dtype=float))
+    pos, _ = spice.spkpos(body, ets, "MOON_ME", "NONE", "MOON")
+    return np.asarray(pos).reshape(-1, 3)
+
+
+def azel_from_vectors(vectors, lat_deg, lon_deg):
+    """(elevation, azimuth) in degrees, arrays of length N, of bodies at `vectors`
+    (N, 3, km, Moon-fixed frame, from the Moon's center) seen from a lunar site.
+    Azimuth is clockwise from north. Elevation is the geometric angle of the body's
+    center above the local horizontal plane.
+    Approximations: spherical Moon, no terrain, no light-time correction."""
     site, up, east, north = _site_basis(lat_deg, lon_deg)
-    body_pos, _ = spice.spkpos(body, et, "MOON_ME", "NONE", "MOON")
-    to_body = np.array(body_pos) - site
-    to_body = to_body / np.linalg.norm(to_body)
-    el = np.degrees(np.arcsin(np.dot(up, to_body)))
-    az = np.degrees(np.arctan2(np.dot(east, to_body), np.dot(north, to_body))) % 360.0
+    to_body = np.asarray(vectors) - site
+    to_body = to_body / np.linalg.norm(to_body, axis=1, keepdims=True)
+    el = np.degrees(np.arcsin(np.clip(to_body @ up, -1.0, 1.0)))
+    az = np.degrees(np.arctan2(to_body @ east, to_body @ north)) % 360.0
     return el, az
+
+
+def azel_deg(body, et, lat_deg, lon_deg):
+    """(elevation, azimuth) of `body` at one time."""
+    el, az = azel_from_vectors(body_vectors(body, [et]), lat_deg, lon_deg)
+    return el[0], az[0]
 
 
 def elevation_deg(body, et, lat_deg, lon_deg):
@@ -65,11 +85,10 @@ def elevation_deg(body, et, lat_deg, lon_deg):
 
 def sun_earth_series(lat_deg, lon_deg, start_utc, days, step_hours=1.0):
     """Sun and Earth elevation/azimuth at a site over a time span."""
-    et0 = utc_to_et(start_utc)
-    ets = et0 + np.arange(0.0, days * 86400.0, step_hours * 3600.0)
+    ets = time_grid(start_utc, days, step_hours)
     result = {"et": ets}
     for body in ("SUN", "EARTH"):
-        azel = np.array([azel_deg(body, et, lat_deg, lon_deg) for et in ets])
-        result[body.lower() + "_el"] = azel[:, 0]
-        result[body.lower() + "_az"] = azel[:, 1]
+        el, az = azel_from_vectors(body_vectors(body, ets), lat_deg, lon_deg)
+        result[body.lower() + "_el"] = el
+        result[body.lower() + "_az"] = az
     return result
