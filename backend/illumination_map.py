@@ -7,6 +7,8 @@ import numpy as np
 from horizon import above_horizon, horizon_profile, site_from_xy
 from lunar_geometry import azel_from_vectors, body_vectors, time_grid
 
+FIGURES = Path(__file__).resolve().parents[1] / "docs" / "figures"
+FIGURES.mkdir(parents=True, exist_ok=True)
 # Scan box in the DEM's polar stereographic meters (covers Shackleton and the ridge)
 X_RANGE_M = (-25_000.0, 15_000.0)
 Y_RANGE_M = (-25_000.0, 15_000.0)
@@ -65,5 +67,5 @@ ax.set_title(f"Sun visibility near the south pole\n{DAYS} days from {START_UTC[:
              f"Sun-limb offset {SUN_LIMB_DEG} deg", fontsize=11)
 ax.legend(loc="upper right")
 fig.tight_layout()
-fig.savefig(Path(__file__).resolve().parent / "illumination_map.png", dpi=150)
+fig.savefig(FIGURES / "illumination_map.png", dpi=150)
 plt.show()
