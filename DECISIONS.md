@@ -53,6 +53,8 @@ doi:10.3847/PSJ/acf3e1. Data DOI: 10.60903/gsfcpgda-lola-spole
   Difference not yet quantified (expected small)
 - Hourly time steps are coarse near the pole; metrics will need finer sampling
 - Terrain limited to sites south of 80S (edge of the LOLA 80S product)
+- Terrain: LOLA south-polar DEM (Barker et al. 2023, PGDA), 80 m/px, heights above the 1737.4 km sphere
+- LOLA products use the DE421 MOON_ME frame; our geometry uses the DE440 MOON_ME. Difference not yet quantified (expected small).
 
 ## Validation log
 - Apollo 11 (0.674 N, 23.473 E, 1969-07-20 20:17:40 UTC; coordinates not yet
