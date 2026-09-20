@@ -7,10 +7,10 @@
 - Apollo 11 first check runs
 
 ## Next
-1. Verify Apollo 11 site coordinates and published sun angle from a primary source
-2. Read the official challenge text and list its must-haves
-3. Sun/Earth elevation over time (time series for one site)
-4. Power and comms models
+1. Find the highest point on the ridge near Shackleton, rerun site_demo.py, compare with published illumination
+2. Verify Apollo 11 published sun elevation (still open)
+3. Curated site list (NASA Artemis candidate regions, verify names/coordinates)
+4. Power and comms metrics; then FastAPI
 
 ## Open questions
 - Exact challenge requirements and judging criteria (not yet read)
