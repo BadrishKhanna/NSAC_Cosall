@@ -104,3 +104,21 @@ Longest Earth-gap stretch:    10.1 days , Not very good.
 - This year's official judging criteria (the criteria pasted so far were labelled 2014)
 - Curated list of polar sites for terrain masks
 - Frontend details (charting library, globe approach)
+
+## Project
+Name: Cosall. Submission date: 2026-11-15. Feature freeze: 2026-11-08.
+
+## Look (approved 2026-09-21, look board step 0)
+- Surfaces: dark "scene" (Earth, Moon, Sun, globe) plus a light "sheet" for results. Sun/Earth charts sit in black "sky windows".
+- Fonts: Newsreader (names, plain-language text), Archivo with tabular figures (controls, data).
+- Color: Highland #F2F3F1 / dark #1E1E1C; Ink #14171A / #E9E7E2; Sky #000000; Basalt #23262A, ridge line #A3A9AE;
+  Sunlight #9A6700 on sheets, #F0C24B on sky; Earth contact #1F6A99 / #7DB7DA; Both #3F7D5C / #74B996; Risk #A8452B / #E0866A.
+  Hue is used only for data; buttons use ink.
+- Avoid: gradients, glows, glass panels, KPI-card grids, all-caps labels.
+
+## Hosting
+- Render free tier for the API (Python web service) and, from Step 1b, the static frontend. Free services sleep after
+  15 minutes idle (about 1 minute to wake), and one summary lists 512 MB RAM and 0.1 CPU. Mitigations: caching,
+  precomputed presets, wake-up ping. Consider a paid instance for the judging window if too slow.
+- Deployment config lives in render.yaml. Data files are downloaded at build time by backend/download_data.py.
+- Python is pinned by .python-version (Render's default for new services is 3.14, so we set 3.13 to match local).
