@@ -1,49 +1,39 @@
+import argparse
 from pathlib import Path
-import sys
 
 import matplotlib.pyplot as plt
-import numpy as np
 
-from horizon import above_horizon, horizon_profile, site_from_xy
-from lunar_geometry import sun_earth_series
+from horizon import site_from_xy
+from metrics import site_metrics
 
 FIGURES = Path(__file__).resolve().parents[1] / "docs" / "figures"
 FIGURES.mkdir(parents=True, exist_ok=True)
-# Site in the DEM's polar stereographic meters. Default: a ridge point picked by eye.
-# Usage: python backend/site_demo.py [x_m y_m]
-X_M, Y_M = (float(sys.argv[1]), float(sys.argv[2])) if len(sys.argv) == 3 else (-10_000.0, -10_000.0)
-LAT_DEG, LON_DEG = site_from_xy(X_M, Y_M)
-START_UTC = "2027-01-01 00:00:00 UTC"
-DAYS = 365
-STEP_H = 1.0
 
-print(f"Site: lat {LAT_DEG:.3f}, lon {LON_DEG:.3f}")
-az_grid, hor = horizon_profile(LAT_DEG, LON_DEG)
+parser = argparse.ArgumentParser(description="Sun/Earth metrics and horizon view for one site.")
+parser.add_argument("x", type=float, nargs="?", default=-10_200.0, help="DEM x, meters")
+parser.add_argument("y", type=float, nargs="?", default=-11_600.0, help="DEM y, meters")
+parser.add_argument("--limb", type=float, default=0.27, help="Sun-limb offset, deg")
+parser.add_argument("--height", type=float, default=2.0, help="observer height, m")
+parser.add_argument("--days", type=int, default=365)
+args = parser.parse_args()
+
+START_UTC = "2027-01-01 00:00:00 UTC"
+STEP_H = 1.0
+lat, lon = site_from_xy(args.x, args.y)
+print(f"Site: x {args.x:.0f} m, y {args.y:.0f} m -> lat {lat:.3f}, lon {lon:.3f}")
+print(f"Assumptions: Sun-limb {args.limb} deg, observer height {args.height} m, "
+      f"{args.days} days from {START_UTC[:10]}, {STEP_H:.0f} h steps")
+
+m = site_metrics(lat, lon, START_UTC, args.days, STEP_H,
+                 sun_limb_deg=args.limb, observer_height_m=args.height)
+hor, az_grid, r = m["horizon_el_deg"], m["horizon_az_deg"], m["series"]
 print(f"Terrain horizon elevation: min {hor.min():.2f}, max {hor.max():.2f}, "
       f"mean {hor.mean():.2f} deg")
-
-r = sun_earth_series(LAT_DEG, LON_DEG, START_UTC, DAYS, step_hours=STEP_H)
-sun_flat = r["sun_el"] > 0
-earth_flat = r["earth_el"] > 0
-sun_up = above_horizon(r["sun_el"], r["sun_az"], az_grid, hor)
-earth_up = above_horizon(r["earth_el"], r["earth_az"], az_grid, hor)
-
-
-def longest_run_days(mask):
-    best = run = 0
-    for v in mask:
-        run = run + 1 if v else 0
-        best = max(best, run)
-    return best * STEP_H / 24.0
-
-
-print(f"Sun   above flat horizon {100 * sun_flat.mean():5.1f} %   "
-      f"above terrain horizon {100 * sun_up.mean():5.1f} %")
-print(f"Earth above flat horizon {100 * earth_flat.mean():5.1f} %   "
-      f"above terrain horizon {100 * earth_up.mean():5.1f} %")
-print(f"Both above terrain horizon: {100 * (sun_up & earth_up).mean():5.1f} %")
-print(f"Longest Sun-dark stretch:   {longest_run_days(~sun_up):6.1f} days")
-print(f"Longest Earth-gap stretch:  {longest_run_days(~earth_up):6.1f} days")
+print(f"Sun visible:        {m['sun_lit_pct']:5.1f} %   longest dark stretch: "
+      f"{m['longest_dark_days']:5.1f} days")
+print(f"Earth visible:      {m['earth_visible_pct']:5.1f} %   longest comms gap:   "
+      f"{m['longest_comms_gap_days']:5.1f} days")
+print(f"Both at once:       {m['both_pct']:5.1f} %")
 
 n = int(30 * 24 / STEP_H)  # first 30 days
 fig, ax = plt.subplots(figsize=(12, 5))
@@ -55,9 +45,11 @@ ax.set_xlim(0, 360)
 ax.set_ylim(-10, max(10, hor.max() + 2))
 ax.set_xlabel("Azimuth (deg, clockwise from north)")
 ax.set_ylabel("Elevation (deg)")
-ax.set_title(f"Horizon view at lat {LAT_DEG:.2f}, lon {LON_DEG:.2f}")
+ax.set_title(f"Horizon view at lat {lat:.2f}, lon {lon:.2f} (observer height {args.height} m)")
 ax.legend(loc="upper right")
 ax.grid(alpha=0.3)
 fig.tight_layout()
-fig.savefig(FIGURES / "site_horizon_view.png", dpi=150)
+name = f"site_horizon_view_x{args.x:.0f}_y{args.y:.0f}.png"
+fig.savefig(FIGURES / name, dpi=150)
+print("Saved", FIGURES / name)
 plt.show()
