@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: cosall-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements-api.txt && python backend/download_data.py
+    startCommand: cd backend && uvicorn api:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
