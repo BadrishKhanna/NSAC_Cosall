@@ -155,3 +155,305 @@ footer {
     gap: 4px;
   }
 }
+
+/* Step 2: results sheet ------------------------------------------------- */
+
+:root {
+  --sun: #9a6700;
+  --earth: #1f6a99;
+  --both: #3f7d5c;
+  --sky: #000000;
+  --land: #23262a;
+  --ridge: #a3a9ae;
+  --sky-ink: #b9bfc5;
+  --sun-sky: #f0c24b;
+  --earth-sky: #7db7da;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --sun: #e8b84a;
+    --earth: #7db7da;
+    --both: #74b996;
+  }
+}
+:root[data-theme="dark"] {
+  --sun: #e8b84a;
+  --earth: #7db7da;
+  --both: #74b996;
+}
+
+.server-sheet {
+  padding: 24px 28px 22px;
+}
+
+.workspace {
+  margin-top: 56px;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 28px;
+  align-items: end;
+  margin-bottom: 28px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  min-width: 220px;
+}
+
+.field-narrow {
+  min-width: 150px;
+}
+
+.field span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.field select,
+.field input[type="number"],
+.field input[type="date"] {
+  font: 500 15px/1.3 "Archivo", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 9px 10px;
+}
+
+.field-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--ink);
+  padding-bottom: 9px;
+}
+
+.field-check input {
+  width: 16px;
+  height: 16px;
+}
+
+.error-line {
+  color: var(--risk);
+}
+
+.sheet {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 44px;
+  transition: opacity 0.15s ease;
+}
+
+.sheet-stale {
+  opacity: 0.55;
+}
+
+.site-meta {
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 8px;
+  max-width: 46em;
+}
+
+.badge-flat {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 5px 10px;
+  border: 1px solid var(--risk);
+  color: var(--risk);
+  border-radius: 2px;
+  font-size: 13px;
+}
+
+.summary {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 19px;
+  line-height: 1.6;
+  max-width: 36em;
+  margin-top: 24px;
+}
+.summary .sun {
+  color: var(--sun);
+}
+.summary .earth {
+  color: var(--earth);
+}
+.summary .both {
+  color: var(--both);
+}
+
+table.metrics {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-size: 15px;
+}
+table.metrics th,
+table.metrics td {
+  text-align: left;
+  padding: 10px 0;
+  border-top: 1px solid var(--rule);
+  font-weight: 400;
+}
+table.metrics td {
+  text-align: right;
+  font-weight: 500;
+}
+table.metrics tr:last-child th,
+table.metrics tr:last-child td {
+  border-bottom: 1px solid var(--rule);
+}
+.tcap {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+aside dl {
+  margin: 12px 0 0;
+}
+aside dl div {
+  padding: 9px 0;
+  border-top: 1px solid var(--rule);
+}
+aside dl div:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+aside dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+aside dd {
+  margin: 2px 0 0;
+  font-weight: 500;
+}
+aside .cap {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 16px;
+}
+
+/* Horizon chart */
+.horizon-fig {
+  margin: 28px 0 0;
+}
+.horizon-window {
+  overflow-x: auto;
+  border-radius: 2px;
+  background: #000;
+}
+.horizon-window svg {
+  display: block;
+  width: 100%;
+  min-width: 620px;
+  height: auto;
+}
+.horizon-fig figcaption {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 8px;
+  max-width: 60em;
+}
+.hz-key {
+  font-weight: 600;
+}
+.hz-key-sun {
+  color: var(--sun);
+}
+.hz-key-earth {
+  color: var(--earth);
+}
+.hz-sky {
+  fill: var(--sky);
+}
+.hz-grid {
+  stroke: #2a2e32;
+  stroke-width: 1;
+}
+.hz-level {
+  stroke: #6b7278;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+.hz-axis {
+  fill: var(--sky-ink);
+  font: 400 13px "Archivo", system-ui, sans-serif;
+}
+.hz-land {
+  fill: var(--land);
+}
+.hz-ridge {
+  fill: none;
+  stroke: var(--ridge);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+.hz-sun-dot {
+  fill: var(--sun-sky);
+}
+.hz-earth-dot {
+  fill: var(--earth-sky);
+}
+
+/* Year ribbon */
+.ribbon {
+  margin-top: 28px;
+}
+.ribbon-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+.ribbon-label {
+  width: 44px;
+  flex: none;
+  font-size: 13px;
+  color: var(--muted);
+}
+.ribbon-track {
+  flex: 1;
+  display: flex;
+  height: 14px;
+  border-radius: 1px;
+  overflow: hidden;
+}
+.ribbon-cell {
+  flex: 1;
+  height: 100%;
+}
+.ribbon-sun {
+  background: var(--sun);
+}
+.ribbon-earth {
+  background: var(--earth);
+}
+.ribbon-cap {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 10px;
+  max-width: 60em;
+}
+
+@media (max-width: 900px) {
+  .sheet {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 22px;
+    gap: 32px;
+  }
+  .controls {
+    gap: 16px 20px;
+  }
+}
