@@ -12,6 +12,12 @@ const MOON_R = 1737.4 / KM_PER_UNIT;
 const COMPRESSED_DISTANCE = 9; // scene units, used only when "compressed" scale is selected
 const SUN_MARKER_DISTANCE = 40; // the Sun marker's distance is stylised, not to scale
 
+// Real photographic textures, served from this site (see frontend/public/textures/README.md
+// for where to get them). If a file is missing, the sphere falls back to a solid color
+// rather than failing, so the scene still works without them.
+const EARTH_TEXTURE_URL = "/textures/earth.jpg";
+const MOON_TEXTURE_URL = "/textures/moon.jpg";
+
 const SPEEDS = [
   { label: "1 hour / s", hoursPerSec: 1 },
   { label: "6 hours / s", hoursPerSec: 6 },
@@ -30,6 +36,32 @@ function nowClamped() {
   if (n < min) return min;
   if (n > max) return max;
   return n;
+}
+
+// Real-data readout shown live over the scene: Moon phase, Earth-Moon distance and the
+// sub-Earth point (the spot on the Moon directly facing Earth, which wanders slowly due
+// to libration). All derived from the same vectors used to draw the scene -- nothing here
+// is a separate or approximate calculation.
+function moonReadout(system) {
+  const m2e = system.moon_from_earth_km.map((v) => -v); // Moon -> Earth
+  const m2s = system.sun_from_moon_km; // Moon -> Sun
+  const dot = m2e[0] * m2s[0] + m2e[1] * m2s[1] + m2e[2] * m2s[2];
+  const na = Math.hypot(...m2e);
+  const nb = Math.hypot(...m2s);
+  const phaseAngle = Math.acos(Math.min(1, Math.max(-1, dot / (na * nb))));
+  const illumPct = ((1 + Math.cos(phaseAngle)) / 2) * 100;
+
+  // Sub-Earth point: rotate the Moon->Earth direction into the Moon's body-fixed frame
+  // (moon_rotation is J2000 -> MOON_ME) and read off latitude/longitude.
+  const R = system.moon_rotation;
+  const bx = R[0][0] * m2e[0] + R[0][1] * m2e[1] + R[0][2] * m2e[2];
+  const by = R[1][0] * m2e[0] + R[1][1] * m2e[1] + R[1][2] * m2e[2];
+  const bz = R[2][0] * m2e[0] + R[2][1] * m2e[1] + R[2][2] * m2e[2];
+  const r = Math.hypot(bx, by, bz);
+  const lat = Math.asin(bz / r) * (180 / Math.PI);
+  const lon = Math.atan2(by, bx) * (180 / Math.PI);
+
+  return { illumPct, distanceKm: na, subEarthLat: lat, subEarthLon: lon };
 }
 
 export default function OrbitScene() {
@@ -66,7 +98,7 @@ export default function OrbitScene() {
 
     // Starfield: a cheap point cloud, purely decorative.
     const starGeo = new THREE.BufferGeometry();
-    const starCount = 1200;
+    const starCount = 1500;
     const starPos = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount; i++) {
       const r = 300 + Math.random() * 400;
@@ -83,23 +115,35 @@ export default function OrbitScene() {
     );
     scene.add(stars);
 
-    const sunLight = new THREE.DirectionalLight(0xffffff, 2.2);
+    const sunLight = new THREE.DirectionalLight(0xffffff, 2.4);
     scene.add(sunLight);
+    scene.add(sunLight.target);
     scene.add(new THREE.AmbientLight(0x1a1c1f, 1)); // faint fill so the night side isn't pure black
 
-    const earth = new THREE.Mesh(
-      new THREE.SphereGeometry(EARTH_R, 48, 48),
-      new THREE.MeshStandardMaterial({ color: 0x1f6a99, roughness: 0.85, metalness: 0.0 }),
-    );
+    // Textures are loaded asynchronously and swapped in when ready; a solid color shows
+    // immediately and stays if the texture file is missing (checked, doesn't reject the
+    // load -- it falls back cleanly via onError below).
+    const loader = new THREE.TextureLoader();
+    const earthMat = new THREE.MeshStandardMaterial({ color: 0x1f6a99, roughness: 0.85 });
+    const moonMat = new THREE.MeshStandardMaterial({ color: 0xa3a9ae, roughness: 0.95 });
+    loader.load(EARTH_TEXTURE_URL, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      earthMat.map = tex;
+      earthMat.color.set(0xffffff);
+      earthMat.needsUpdate = true;
+    }, undefined, () => { /* keep the solid-color fallback */ });
+    loader.load(MOON_TEXTURE_URL, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      moonMat.map = tex;
+      moonMat.color.set(0xffffff);
+      moonMat.needsUpdate = true;
+    }, undefined, () => { /* keep the solid-color fallback */ });
+
+    const earth = new THREE.Mesh(new THREE.SphereGeometry(EARTH_R, 48, 48), earthMat);
     scene.add(earth);
 
-    const moonPivot = new THREE.Group(); // position set each frame from real data
-    const moon = new THREE.Mesh(
-      new THREE.SphereGeometry(MOON_R, 40, 40),
-      new THREE.MeshStandardMaterial({ color: 0xa3a9ae, roughness: 0.95, metalness: 0.0 }),
-    );
-    moonPivot.add(moon);
-    scene.add(moonPivot);
+    const moon = new THREE.Mesh(new THREE.SphereGeometry(MOON_R, 40, 40), moonMat);
+    scene.add(moon);
 
     const sunMarker = new THREE.Mesh(
       new THREE.SphereGeometry(0.9, 20, 20),
@@ -110,10 +154,10 @@ export default function OrbitScene() {
     let raf = null;
     let disposed = false;
 
-    // Earth and Moon orientation are set directly from the fetched SPICE rotation
-    // matrices (see the effect below) whenever the simulated time changes -- there
-    // is no client-side spin approximation layered on top, so what you see is
-    // always the real orientation for the displayed time, never a guess.
+    // Earth and Moon position/orientation are set directly from the fetched SPICE
+    // vectors and rotation matrices (see the effect below) whenever the simulated time
+    // changes -- there is no client-side motion approximation layered on top, so what
+    // you see is always the real geometry for the displayed time, never a guess.
     function animate() {
       if (disposed) return;
       controls.update();
@@ -132,10 +176,7 @@ export default function OrbitScene() {
     const ro = new ResizeObserver(onResize);
     ro.observe(mount);
 
-    stateRef.current = {
-      ...stateRef.current,
-      scene, camera, renderer, controls, earth, moonPivot, moon, sunMarker, sunLight,
-    };
+    stateRef.current = { ...stateRef.current, scene, camera, renderer, controls, earth, moon, sunMarker, sunLight };
 
     return () => {
       disposed = true;
@@ -173,20 +214,18 @@ export default function OrbitScene() {
   useEffect(() => {
     if (!system) return;
     const st = stateRef.current;
-    if (!st.moonPivot) return;
+    if (!st.moon) return;
 
     const moonKm = system.moon_from_earth_km;
     const distKm = Math.hypot(...moonKm);
     const dir = moonKm.map((v) => v / distKm);
     const distUnits = trueScale ? distKm / KM_PER_UNIT : COMPRESSED_DISTANCE;
-    st.moonPivot.position.set(dir[0] * distUnits, dir[1] * distUnits, dir[2] * distUnits);
+    st.moon.position.set(dir[0] * distUnits, dir[1] * distUnits, dir[2] * distUnits);
 
     // Rotation matrices from the API are J2000 -> body-fixed; a mesh authored in
     // body-fixed axes needs the inverse (transpose, since these are orthonormal).
     const setFromRowsTransposed = (obj, rows) => {
       const m = new THREE.Matrix4();
-      // three.js Matrix4.set() takes elements row-major; the transpose of `rows`
-      // read row-major is `rows` read column-major, so we feed columns as rows.
       m.set(
         rows[0][0], rows[1][0], rows[2][0], 0,
         rows[0][1], rows[1][1], rows[2][1], 0,
@@ -203,19 +242,12 @@ export default function OrbitScene() {
     const sunDir = sunKm.map((v) => v / sunDist);
     st.sunLight.position.set(sunDir[0] * 60, sunDir[1] * 60, sunDir[2] * 60);
     st.sunLight.target.position.set(0, 0, 0);
-    st.scene.add(st.sunLight.target);
     st.sunMarker.position.set(
       sunDir[0] * SUN_MARKER_DISTANCE,
       sunDir[1] * SUN_MARKER_DISTANCE,
       sunDir[2] * SUN_MARKER_DISTANCE,
     );
   }, [system, trueScale]);
-
-  // --- Keep the animation loop's playing/speed state in sync -----------
-  useEffect(() => {
-    stateRef.current.playing = playing;
-    stateRef.current.hoursPerSec = SPEEDS[speedIdx].hoursPerSec;
-  }, [playing, speedIdx]);
 
   // --- Advance the simulated clock while playing ------------------------
   useEffect(() => {
@@ -234,39 +266,13 @@ export default function OrbitScene() {
     return () => clearInterval(id);
   }, [playing, speedIdx]);
 
-  const moonDistKm = system ? Math.hypot(...system.moon_from_earth_km) : null;
+  const readout = system ? moonReadout(system) : null;
 
   return (
-    <section className="orbit-section" aria-labelledby="orbit-h">
-      <div className="section-head">
-        <h2 id="orbit-h">Earth, Moon and Sun right now</h2>
-        <p>
-          Positions and orientation come from the same NASA ephemeris used for the results
-          sheet below. Drag to look around; the Sun is shown as a marker in the correct
-          direction, not at its real distance.
-        </p>
-      </div>
+    <div className="orbit-fullscreen">
+      <div className="orbit-canvas-full" ref={mountRef} />
 
-      <div className="orbit-wrap">
-        <div className="orbit-canvas" ref={mountRef} />
-        {errorMsg && <p className="note-line error-line orbit-error">{errorMsg}</p>}
-      </div>
-
-      <div className="orbit-controls">
-        <button type="button" className="btn" onClick={() => setPlaying((p) => !p)}>
-          {playing ? "Pause" : "Play"}
-        </button>
-        <select
-          value={speedIdx}
-          onChange={(e) => setSpeedIdx(Number(e.target.value))}
-          aria-label="Playback speed"
-        >
-          {SPEEDS.map((s, i) => (
-            <option key={s.label} value={i}>
-              {s.label}
-            </option>
-          ))}
-        </select>
+      <div className="orbit-overlay orbit-overlay-tl">
         <input
           type="datetime-local"
           value={time.toISOString().slice(0, 16)}
@@ -276,15 +282,21 @@ export default function OrbitScene() {
             if (e.target.value) setTime(new Date(e.target.value + ":00Z"));
           }}
         />
+        <button type="button" className="btn" onClick={() => setPlaying((p) => !p)}>
+          {playing ? "Pause" : "Play"}
+        </button>
+        <select value={speedIdx} onChange={(e) => setSpeedIdx(Number(e.target.value))} aria-label="Playback speed">
+          {SPEEDS.map((s, i) => (
+            <option key={s.label} value={i}>
+              {s.label}
+            </option>
+          ))}
+        </select>
         <button type="button" className="btn" onClick={() => setTime(nowClamped())}>
           Now
         </button>
         <div className="scale-toggle" role="group" aria-label="Distance scale">
-          <button
-            type="button"
-            className={!trueScale ? "active" : ""}
-            onClick={() => setTrueScale(false)}
-          >
+          <button type="button" className={!trueScale ? "active" : ""} onClick={() => setTrueScale(false)}>
             Compressed
           </button>
           <button type="button" className={trueScale ? "active" : ""} onClick={() => setTrueScale(true)}>
@@ -292,12 +304,38 @@ export default function OrbitScene() {
           </button>
         </div>
       </div>
-      {moonDistKm && (
-        <p className="orbit-readout">
-          Earth&ndash;Moon distance right now: {Math.round(moonDistKm).toLocaleString()} km (
-          {(moonDistKm / (6371 * 2)).toFixed(1)} Earth diameters)
+
+      <div className="orbit-overlay orbit-overlay-tr">
+        <h3>Right now, from real data</h3>
+        {readout ? (
+          <dl>
+            <div>
+              <dt>Moon phase</dt>
+              <dd>{readout.illumPct.toFixed(0)}% illuminated</dd>
+            </div>
+            <div>
+              <dt>Earth&ndash;Moon distance</dt>
+              <dd>{Math.round(readout.distanceKm).toLocaleString()} km</dd>
+            </div>
+            <div>
+              <dt>Sub-Earth point on the Moon</dt>
+              <dd>
+                {Math.abs(readout.subEarthLat).toFixed(1)}&deg;{readout.subEarthLat >= 0 ? "N" : "S"},{" "}
+                {Math.abs(readout.subEarthLon).toFixed(1)}&deg;{readout.subEarthLon >= 0 ? "E" : "W"}
+              </dd>
+            </div>
+          </dl>
+        ) : (
+          <p className="note-line">Loading&hellip;</p>
+        )}
+        <p className="orbit-hint">
+          Move the date or press Play &mdash; these numbers and the Moon&rsquo;s lit
+          side should change together. If the numbers move but the picture doesn&rsquo;t,
+          that is a bug; tell us.
         </p>
-      )}
-    </section>
+      </div>
+
+      {errorMsg && <p className="note-line error-line orbit-error">{errorMsg}</p>}
+    </div>
   );
 }
