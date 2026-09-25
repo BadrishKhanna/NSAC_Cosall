@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getJSON, siteQuery } from "./api.js";
 import HorizonChart from "./HorizonChart.jsx";
 import YearRibbon from "./YearRibbon.jsx";
+import SnapshotChip from "./SnapshotChip.jsx";
 
 const CUSTOM = "__custom__";
 const DAYS = 365;
@@ -21,28 +22,20 @@ function fmtDays(v) {
   return `${v.toFixed(2)} days`;
 }
 
-function SnapshotChip({ kind, up, elevation, label, upText, downText }) {
-  const sign = elevation >= 0 ? "+" : "\u2212";
-  return (
-    <div className={`chip chip-${kind} ${up ? "chip-up" : "chip-down"}`}>
-      <span className="chip-dot" />
-      <span>
-        <b>{label}</b> {up ? "up" : "down"}
-        <span className="chip-el"> ({sign}{Math.abs(elevation).toFixed(1)}&deg;)</span>
-        {" \u2014 "}
-        {up ? upText : downText}
-      </span>
-    </div>
-  );
-}
-
-export default function SiteWorkspace({ presets }) {
-  const [presetId, setPresetId] = useState(presets[0]?.id ?? CUSTOM);
-  const [customLat, setCustomLat] = useState("-89.49");
-  const [customLon, setCustomLon] = useState("-138.67");
+// The site picker's raw state (presetId, customLat, customLon) is owned by the parent
+// (App) rather than kept locally here, so the chosen site survives switching tabs and
+// away, and so the Orbit tab can show a marker for whatever is currently selected.
+export default function SiteWorkspace({ presets, selection, onSelectionChange, onSiteChange }) {
+  const presetId = selection.presetId || presets[0]?.id || CUSTOM;
+  const customLat = selection.customLat;
+  const customLon = selection.customLon;
+  const setPresetId = (id) => onSelectionChange({ ...selection, presetId: id });
+  const setCustomLat = (v) => onSelectionChange({ ...selection, customLat: v });
+  const setCustomLon = (v) => onSelectionChange({ ...selection, customLon: v });
   const [start, setStart] = useState("2027-01-01");
   const [sunEdge, setSunEdge] = useState(true); // true: Sun's upper edge counts; false: center only
   const [heightM, setHeightM] = useState(2);
+
 
   const [result, setResult] = useState(null);
   const [phase, setPhase] = useState("idle"); // idle | loading | ready | error
@@ -56,6 +49,11 @@ export default function SiteWorkspace({ presets }) {
     if (Number.isNaN(lat) || Number.isNaN(lon)) return null;
     return { lat, lon, name: "Custom coordinates", note: null };
   }, [preset, customLat, customLon]);
+
+  // Report the chosen site up to the parent, so the Orbit tab can mark it on the Moon.
+  useEffect(() => {
+    onSiteChange?.(site);
+  }, [site, onSiteChange]);
 
   useEffect(() => {
     if (!site) {

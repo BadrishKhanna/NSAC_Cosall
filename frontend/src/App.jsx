@@ -96,12 +96,28 @@ export default function App() {
   const [presetError, setPresetError] = useState(false);
   const serverUp = server.phase === "ready" || server.phase === "nodata";
 
+  // The site picker's raw selection lives here (not inside SiteWorkspace) so it survives
+  // switching tabs, and the derived site (lat/lon/name) is shared with the Orbit tab so
+  // it can mark the chosen site on the Moon.
+  const [siteSelection, setSiteSelection] = useState({ presetId: "", customLat: "-89.49", customLon: "-138.67" });
+  const [selectedSite, setSelectedSite] = useState(null);
+
   useEffect(() => {
     if (!serverUp) return;
     getJSON("/api/presets")
       .then(setPresets)
       .catch(() => setPresetError(true));
   }, [serverUp]);
+
+  // Give the Orbit tab a sensible default (the first preset) even if the Planner tab
+  // has never been opened yet, so a visitor who goes straight to Orbit still sees a
+  // marked site rather than nothing.
+  useEffect(() => {
+    if (presets && !selectedSite) {
+      const p = presets[0];
+      if (p) setSelectedSite({ lat: p.lat, lon: p.lon, name: p.name });
+    }
+  }, [presets, selectedSite]);
 
   return (
     <div className={`app app-${tab}`}>
@@ -127,13 +143,20 @@ export default function App() {
 
       {tab === "orbit" && (
         <Suspense fallback={<div className="orbit-fullscreen orbit-loading" aria-hidden="true" />}>
-          <OrbitScene />
+          <OrbitScene site={selectedSite} />
         </Suspense>
       )}
 
       {tab === "planner" && (
         <main className="page planner-page">
-          {presets && <SiteWorkspace presets={presets} />}
+          {presets && (
+            <SiteWorkspace
+              presets={presets}
+              selection={siteSelection}
+              onSelectionChange={setSiteSelection}
+              onSiteChange={setSelectedSite}
+            />
+          )}
           {serverUp && !presets && !presetError && <p className="note-line">Loading the site list&hellip;</p>}
           {presetError && (
             <p className="note-line error-line">The site list could not be loaded. Reload the page to try again.</p>
