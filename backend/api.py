@@ -1,11 +1,12 @@
 from datetime import datetime
 from functools import lru_cache
-from download_data import DATA, FILES
+
 import numpy as np
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
+from download_data import DATA, FILES
 from horizon import horizon_profile, site_from_xy
 from lunar_geometry import load_kernels
 import spiceypy as spice
@@ -16,6 +17,19 @@ app = FastAPI(title="Lunar site planner API",
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET"], allow_headers=["*"])
 # TODO before deploying: replace allow_origins=["*"] with the frontend's address.
+
+
+def kernels_self_test():
+    """Loads the kernels and exercises them with a real call, so a corrupted or
+    incomplete kernel (e.g. from a download interrupted mid-transfer) fails loudly
+    here -- before the server starts accepting traffic -- rather than as a cryptic
+    500 on the first real request. /api/health only checks that the kernel files
+    exist, not that their contents are valid, which is exactly how a truncated
+    download can pass one check and fail the other.
+    Called explicitly from render.yaml's startCommand, never at import time, so
+    importing this module for tests never triggers it."""
+    load_kernels()
+    spice.str2et("2000-01-01 00:00:00 UTC")
 
 MIN_DATE, MAX_DATE = datetime(1960, 1, 1), datetime(2050, 12, 31)
 MAX_POINTS = 20_000          # per request, keeps computation bounded
@@ -59,6 +73,7 @@ def health():
 def presets():
     return PRESETS
 
+
 @app.get("/api/system")
 def system(time: str = Query(..., description="UTC time, e.g. 2027-06-15T12:00:00")):
     """Real Sun/Earth/Moon geometry for one instant, for the 3D orbit scene.
@@ -87,6 +102,7 @@ def system(time: str = Query(..., description="UTC time, e.g. 2027-06-15T12:00:0
         "moon_rotation": [_r(row, 6) for row in moon_rot],
         "earth_rotation": [_r(row, 6) for row in earth_rot],
     }
+
 
 @app.get("/api/site")
 def site(lat: float | None = Query(None, ge=-90, le=90),
