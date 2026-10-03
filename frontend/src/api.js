@@ -26,12 +26,15 @@ export async function getJSON(path, { timeoutMs = 20000 } = {}) {
   }
 }
 
-// Builds the query string for GET /api/site from a plain object of parameters,
+// Builds a request path with a query string from a plain object of parameters,
 // dropping anything null or undefined so callers can pass a sparse object.
-export function siteQuery(params) {
+function buildQuery(path, params) {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value !== null && value !== undefined && value !== "") search.set(key, value);
   }
-  return `/api/site?${search.toString()}`;
+  return `${path}?${search.toString()}`;
 }
+
+export const siteQuery = (params) => buildQuery("/api/site", params);
+export const windowsQuery = (params) => buildQuery("/api/windows", params);
