@@ -3,6 +3,7 @@ import { API_URL, IS_LOCAL_API, getJSON } from "./api.js";
 import HomeTab from "./HomeTab.jsx";
 import SiteWorkspace from "./SiteWorkspace.jsx";
 import LaunchPlanner from "./LaunchPlanner.jsx";
+import AboutTab from "./AboutTab.jsx";
 // Three.js is sizeable, so the orbit scene is loaded only when the tab is opened,
 // rather than blocking the initial page load.
 const OrbitScene = lazy(() => import("./OrbitScene.jsx"));
@@ -11,7 +12,7 @@ const WAKE_HINT_MS = 2500; // show the "waking" message if the server has not an
 const RETRY_MS = 3000;
 const GIVE_UP_MS = 120000; // stop retrying after two minutes
 
-const TABS = ["home", "orbit", "planner", "launch"];
+const TABS = ["home", "orbit", "planner", "launch", "about"];
 
 // Reads the current tab from the URL hash (#orbit, #planner), so each tab has its own
 // shareable, bookmarkable, reload-safe link, with no server-side routing configuration
@@ -135,6 +136,9 @@ export default function App() {
         <button type="button" className={tab === "launch" ? "active" : ""} onClick={() => go("launch")}>
           Launch planner
         </button>
+        <button type="button" className={tab === "about" ? "active" : ""} onClick={() => go("about")}>
+          About
+        </button>
       </nav>
 
       {server.phase !== "ready" && (
@@ -184,6 +188,7 @@ export default function App() {
           )}
         </main>
       )}
+      {tab === "about" && <AboutTab />}
     </div>
   );
 }
