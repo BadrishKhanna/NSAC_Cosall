@@ -20,14 +20,13 @@
   Sun/Earth/Both timeline, launch-site and transfer-time selection, 3-year
   mission outlook.
 - Multi-site compare mode (side-by-side, reusing `/api/site`).
-
+- About page with validations and informations.
+- Added a copy link feature for sharing one user's input to another easily.
 ## Next
-1. Dedicated validation/"how we know it's right" page (surface the
-   Validation log above in-app).
-2. Calendar heatmap with month labels; sunrise/sunset list.
-3. Stretch: DSN ground-station passes, power/battery estimator, eclipse
+1. Calendar heatmap with month labels; sunrise/sunset list.
+2. Stretch: DSN ground-station passes, power/battery estimator, eclipse
    events, share/export.
-4. Documentation pass: begins 20 days before the submission deadline (per
+3. Documentation pass: begins 20 days before the submission deadline (per
    plan) — README, architecture doc, demo video, project page.
 
 ## Open questions

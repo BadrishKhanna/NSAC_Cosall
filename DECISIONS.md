@@ -220,8 +220,4 @@ into `frontend/public/textures/` (not auto-fetched).
   a compatibility surprise.
 
 ## Open questions
-- Confirm this year's official judging criteria and exact submission deadline
-  against the live Space Apps event page (the only criteria seen so far were
-  explicitly labelled 2014).
-- Curated list of additional polar candidate sites beyond the two current
-  presets.
+- Confirm this year's official judging criteria.

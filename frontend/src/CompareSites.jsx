@@ -3,6 +3,7 @@ import { getJSON, siteQuery } from "./api.js";
 import SitePicker, { CUSTOM } from "./SitePicker.jsx";
 import VisibilityRibbon from "./VisibilityRibbon.jsx";
 import HorizonChart from "./HorizonChart.jsx";
+import { patchParams, readHash } from "./urlState.js";
 
 // Side-by-side comparison of three sites, shown below the Site planner's own result.
 // The start date, antenna height and Sun-edge setting come from the planner (props), so
@@ -42,6 +43,25 @@ function defaultSlots(presets) {
   return picks.slice(0, SLOTS).map((id) => ({ presetId: id, customLat: "-89.49", customLon: "-138.67" }));
 }
 
+// Starting slots from the link (#planner?c1=connecting-ridge&c2=custom&c2lat=..&c2lon=..).
+// Anything missing or unknown falls back to that slot's default site.
+function slotsFromParams(params, presets) {
+  return defaultSlots(presets).map((d, i) => {
+    const n = i + 1;
+    const id = params.get(`c${n}`);
+    if (id === "custom") {
+      const lat = Number.parseFloat(params.get(`c${n}lat`));
+      const lon = Number.parseFloat(params.get(`c${n}lon`));
+      if (Number.isFinite(lat) && Number.isFinite(lon)) {
+        return { presetId: CUSTOM, customLat: String(lat), customLon: String(lon) };
+      }
+    } else if (id && presets.some((p) => p.id === id)) {
+      return { ...d, presetId: id };
+    }
+    return d;
+  });
+}
+
 function resolveSite(slot, presets) {
   const p = presets.find((x) => x.id === slot.presetId);
   if (p) return { lat: p.lat, lon: p.lon, name: p.name };
@@ -65,9 +85,22 @@ function verdictLines(ready) {
 }
 
 export default function CompareSites({ presets, start, sunEdge, heightM, days, hold }) {
-  const [slots, setSlots] = useState(() => defaultSlots(presets));
+  const [slots, setSlots] = useState(() => slotsFromParams(readHash().params, presets));
   const [cols, setCols] = useState(() => Array.from({ length: SLOTS }, () => ({ phase: "idle" })));
   const cacheRef = useRef(new Map());
+
+  // Keep the address bar in step with the three chosen sites, so a copied link includes them.
+  useEffect(() => {
+    const patch = {};
+    slots.forEach((slot, i) => {
+      const n = i + 1;
+      const custom = slot.presetId === CUSTOM;
+      patch[`c${n}`] = custom ? "custom" : slot.presetId;
+      patch[`c${n}lat`] = custom ? slot.customLat : null;
+      patch[`c${n}lon`] = custom ? slot.customLon : null;
+    });
+    patchParams("planner", patch);
+  }, [slots]);
 
   const sunLimb = sunEdge ? 0.27 : 0;
   const sites = useMemo(() => slots.map((s) => resolveSite(s, presets)), [slots, presets]);
