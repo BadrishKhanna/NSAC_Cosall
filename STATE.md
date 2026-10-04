@@ -19,15 +19,15 @@
 - Launch date suggester: multi-year landing-window scan with a graphical
   Sun/Earth/Both timeline, launch-site and transfer-time selection, 3-year
   mission outlook.
+- Multi-site compare mode (side-by-side, reusing `/api/site`).
 
 ## Next
-1. Multi-site compare mode (side-by-side, reusing `/api/site`).
-2. Dedicated validation/"how we know it's right" page (surface the
+1. Dedicated validation/"how we know it's right" page (surface the
    Validation log above in-app).
-3. Calendar heatmap with month labels; sunrise/sunset list.
-4. Stretch: DSN ground-station passes, power/battery estimator, eclipse
+2. Calendar heatmap with month labels; sunrise/sunset list.
+3. Stretch: DSN ground-station passes, power/battery estimator, eclipse
    events, share/export.
-5. Documentation pass: begins 20 days before the submission deadline (per
+4. Documentation pass: begins 20 days before the submission deadline (per
    plan) — README, architecture doc, demo video, project page.
 
 ## Open questions
