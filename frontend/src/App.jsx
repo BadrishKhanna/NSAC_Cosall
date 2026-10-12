@@ -10,12 +10,15 @@ import MusicToggle from "./MusicToggle.jsx";
 // Three.js is sizeable, so the orbit scene is loaded only when the tab is opened,
 // rather than blocking the initial page load.
 const OrbitScene = lazy(() => import("./OrbitScene.jsx"));
+const StoryPage = lazy(() => import("./story/StoryPage.jsx"));
 
 const WAKE_HINT_MS = 2500; // show the "waking" message if the server has not answered by then
 const RETRY_MS = 3000;
 const GIVE_UP_MS = 120000; // stop retrying after two minutes
 
-const TABS = ["home", "orbit", "planner", "launch", "about"];
+
+const TABS = ["home", "orbit", "planner", "launch", "about", "story"];
+
 
 const DEFAULT_SELECTION = { presetId: "", customLat: "-89.49", customLon: "-138.67" };
 
@@ -228,6 +231,12 @@ export default function App() {
       )}
 
       {tab === "about" && <AboutTab />}
+
+      {tab === "story" && (
+      <Suspense fallback={<main className="page"><p className="note-line">Loading the story&hellip;</p></main>}>
+       <StoryPage />
+      </Suspense>
+)}
     </div>
   );
 }
