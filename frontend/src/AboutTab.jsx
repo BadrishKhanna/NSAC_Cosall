@@ -217,9 +217,10 @@ export default function AboutTab() {
       <header className="about-hero">
         <HorizonHeroArt />
         <div className="about-hero-inner">
-          <h1>Is the Sun up? Is Earth in view?</h1>
+          <h1>About Us</h1>
           <p className="lede">
-            Cosall answers both for any lunar south-pole site and date, and shows its working.
+            Our aim, our team, how the results were validated, the data behind them, and the
+            limits you should know about.
           </p>
         </div>
       </header>
