@@ -1,1 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
 
+# Node / frontend
+node_modules/
+dist/
+
+# Environment / secrets
+.env
+
+# Large data files (SPICE kernels, DEM tiles) — not committed, see backend/data/README.md
+*.bsp
+*.tpc
+*.tls
+*.tif
+*.tiff
+*.img
+
+# OS / editor junk
+.DS_Store
+.vscode/
+.idea/
