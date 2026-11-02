@@ -31,6 +31,10 @@ with LOLA terrain horizon masks. Not a full illumination, thermal or power simul
 - Range and step limits enforced per request. Kernels fetched by
   backend/download_kernels.py (to be written).
 - Deploy early (around week 3), not at the end.
+- Landing site input: click on a hillshaded polar map, or type lat/lon, or choose a preset.
+  Horizon masks computed on demand and cached (was: curated precomputed list), if
+  horizon_profile is fast enough on the real DEM (to be timed). Sites outside the
+  terrain product (north of 80S) get geometry only, labelled "no terrain data".
 
 ## Data
 SPICE kernels in backend/data/ (gitignored, downloaded from NAIF):
@@ -58,6 +62,7 @@ doi:10.3847/PSJ/acf3e1. Data DOI: 10.60903/gsfcpgda-lola-spole
 - Horizon mask: rays every 1 deg azimuth, sampled every 80 m out to 100 km on the 80 m LOLA DEM, bilinear interpolation, exact spherical curvature, observer at surface (height 0). Terrain beyond 100 km ignored.
 - Projected meters treated as true meters, straight rays in the projected plane (scale error not yet checked against the DEM's CRS)
 - Sun and Earth treated as points against the horizon (disk sizes ignored)
+- Illumination scan: 1 km grid, terrain within 30 km, 2 deg azimuth steps, hourly for one year (2027). Coarser than the per-site demo. Sun-limb offset is a parameter (default 0, point Sun).
 
 ## Validation log
 - Apollo 11 (0.674 N, 23.473 E, 1969-07-20 20:17:40 UTC; coordinates not yet
@@ -74,6 +79,13 @@ doi:10.3847/PSJ/acf3e1. Data DOI: 10.60903/gsfcpgda-lola-spole
   Verify site coordinates and landing time from a primary source first. The site is
   outside the 80S terrain product, so this is a geometry-only check.
 - horizon_profile on synthetic terrain (independent spherical construction): mesa bearings recovered within 0.5 deg at four sites, elevation angles within ~0.3 deg of analytic values. Not yet compared against published illumination maps.
+- Site: lat -89.534, lon -135.000
+Terrain horizon elevation: min -3.91, max 20.29, mean 6.26 deg
+Sun   above flat horizon  52.1 %   above terrain horizon  33.4 %
+Earth above flat horizon  45.6 %   above terrain horizon  64.8 %
+Both above terrain horizon:  23.6 %
+Longest Sun-dark stretch:     21.4 days
+Longest Earth-gap stretch:    10.1 days , Not very good.
 
 ## Open questions
 - Event date and submission deadline
