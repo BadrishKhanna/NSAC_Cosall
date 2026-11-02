@@ -15,14 +15,18 @@ def longest_run_hours(mask, step_hours):
 
 def site_metrics(lat_deg, lon_deg, start_utc, days, step_hours=1.0,
                  sun_limb_deg=0.27, observer_height_m=2.0, earth_limb_deg=0.0,
-                 max_range_m=100_000.0, az_step_deg=1.0):
+                 max_range_m=100_000.0, az_step_deg=1.0, horizon=None):
     """Power and comms metrics for one site over a time span.
     sun_limb_deg: count the Sun as visible when its upper edge clears the terrain
       (0.27 = the Sun's angular radius, 0 = center only).
     observer_height_m: height of the antenna / solar panel above the ground.
-    earth_limb_deg: same idea for Earth (its angular radius from the Moon is about 0.95 deg)."""
-    az_grid, hor = horizon_profile(lat_deg, lon_deg, max_range_m=max_range_m,
-                                   az_step_deg=az_step_deg, observer_height_m=observer_height_m)
+    earth_limb_deg: same idea for Earth (its angular radius from the Moon is about 0.95 deg).
+    horizon: optional (azimuths_deg, elevations_deg) to use instead of computing the terrain
+      horizon (for caching, or a flat horizon where there is no terrain data)."""
+    if horizon is None:
+        horizon = horizon_profile(lat_deg, lon_deg, max_range_m=max_range_m,
+                                  az_step_deg=az_step_deg, observer_height_m=observer_height_m)
+    az_grid, hor = horizon
     series = sun_earth_series(lat_deg, lon_deg, start_utc, days, step_hours)
     sun_up = above_horizon(series["sun_el"] + sun_limb_deg, series["sun_az"], az_grid, hor)
     earth_up = above_horizon(series["earth_el"] + earth_limb_deg, series["earth_az"], az_grid, hor)
