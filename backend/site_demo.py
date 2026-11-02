@@ -7,6 +7,8 @@ import numpy as np
 from horizon import above_horizon, horizon_profile, site_from_xy
 from lunar_geometry import sun_earth_series
 
+FIGURES = Path(__file__).resolve().parents[1] / "docs" / "figures"
+FIGURES.mkdir(parents=True, exist_ok=True)
 # Site in the DEM's polar stereographic meters. Default: a ridge point picked by eye.
 # Usage: python backend/site_demo.py [x_m y_m]
 X_M, Y_M = (float(sys.argv[1]), float(sys.argv[2])) if len(sys.argv) == 3 else (-10_000.0, -10_000.0)
@@ -57,5 +59,5 @@ ax.set_title(f"Horizon view at lat {LAT_DEG:.2f}, lon {LON_DEG:.2f}")
 ax.legend(loc="upper right")
 ax.grid(alpha=0.3)
 fig.tight_layout()
-fig.savefig(Path(__file__).resolve().parent / "site_horizon_view.png", dpi=150)
+fig.savefig(FIGURES / "site_horizon_view.png", dpi=150)
 plt.show()

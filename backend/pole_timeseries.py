@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 
 from lunar_geometry import sun_earth_series
 
+FIGURES = Path(__file__).resolve().parents[1] / "docs" / "figures"
+FIGURES.mkdir(parents=True, exist_ok=True)
 # Test point 0.5 degrees from the south pole. NOT a real candidate site.
 LAT_DEG, LON_DEG = -89.5, 0.0
 START_UTC = "2027-01-01 00:00:00 UTC"
@@ -31,5 +33,5 @@ axes[0].set_title(
     f"Sun and Earth elevation at {LAT_DEG} lat, {LON_DEG} lon (spherical Moon, no terrain)"
 )
 fig.tight_layout()
-fig.savefig(Path(__file__).resolve().parent / "pole_timeseries.png", dpi=150)
+fig.savefig(FIGURES / "pole_timeseries.png", dpi=150)
 plt.show()
