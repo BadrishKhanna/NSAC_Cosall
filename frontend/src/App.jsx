@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useState } from "react";
 import { API_URL, IS_LOCAL_API, getJSON } from "./api.js";
 import HomeTab from "./HomeTab.jsx";
 import SiteWorkspace from "./SiteWorkspace.jsx";
+import LaunchPlanner from "./LaunchPlanner.jsx";
 // Three.js is sizeable, so the orbit scene is loaded only when the tab is opened,
 // rather than blocking the initial page load.
 const OrbitScene = lazy(() => import("./OrbitScene.jsx"));
@@ -10,7 +11,7 @@ const WAKE_HINT_MS = 2500; // show the "waking" message if the server has not an
 const RETRY_MS = 3000;
 const GIVE_UP_MS = 120000; // stop retrying after two minutes
 
-const TABS = ["home", "orbit", "planner"];
+const TABS = ["home", "orbit", "planner", "launch"];
 
 // Reads the current tab from the URL hash (#orbit, #planner), so each tab has its own
 // shareable, bookmarkable, reload-safe link, with no server-side routing configuration
@@ -131,6 +132,9 @@ export default function App() {
         <button type="button" className={tab === "planner" ? "active" : ""} onClick={() => go("planner")}>
           Site planner
         </button>
+        <button type="button" className={tab === "launch" ? "active" : ""} onClick={() => go("launch")}>
+          Launch planner
+        </button>
       </nav>
 
       {server.phase !== "ready" && (
@@ -151,6 +155,23 @@ export default function App() {
         <main className="page planner-page">
           {presets && (
             <SiteWorkspace
+              presets={presets}
+              selection={siteSelection}
+              onSelectionChange={setSiteSelection}
+              onSiteChange={setSelectedSite}
+            />
+          )}
+          {serverUp && !presets && !presetError && <p className="note-line">Loading the site list&hellip;</p>}
+          {presetError && (
+            <p className="note-line error-line">The site list could not be loaded. Reload the page to try again.</p>
+          )}
+        </main>
+      )}
+
+      {tab === "launch" && (
+        <main className="page planner-page">
+          {presets && (
+            <LaunchPlanner
               presets={presets}
               selection={siteSelection}
               onSelectionChange={setSiteSelection}
