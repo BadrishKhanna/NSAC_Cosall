@@ -4,6 +4,8 @@ import HomeTab from "./HomeTab.jsx";
 import SiteWorkspace from "./SiteWorkspace.jsx";
 import LaunchPlanner from "./LaunchPlanner.jsx";
 import AboutTab from "./AboutTab.jsx";
+import { CUSTOM } from "./SitePicker.jsx";
+import { readHash, selectionFromParams } from "./urlState.js";
 // Three.js is sizeable, so the orbit scene is loaded only when the tab is opened,
 // rather than blocking the initial page load.
 const OrbitScene = lazy(() => import("./OrbitScene.jsx"));
@@ -14,24 +16,37 @@ const GIVE_UP_MS = 120000; // stop retrying after two minutes
 
 const TABS = ["home", "orbit", "planner", "launch", "about"];
 
+const DEFAULT_SELECTION = { presetId: "", customLat: "-89.49", customLon: "-138.67" };
+
 // Reads the current tab from the URL hash (#orbit, #planner), so each tab has its own
 // shareable, bookmarkable, reload-safe link, with no server-side routing configuration
-// needed (the hash never reaches the server).
+// needed (the hash never reaches the server). The hash can also carry settings after a
+// "?" (#planner?site=...), which the planners read themselves; here only the tab name
+// matters.
+//
+// linkKey changes every time the hash changes from outside the planners (a tab click, or
+// a link pasted into the address bar). The planners use it as a React key, so they start
+// over from whatever the new link says. The planners' own address-bar updates use
+// replaceState, which does not fire this event.
 function useHashTab() {
   const read = () => {
-    const h = window.location.hash.replace("#", "");
-    return TABS.includes(h) ? h : "home";
+    const t = readHash().tab;
+    return TABS.includes(t) ? t : "home";
   };
   const [tab, setTab] = useState(read);
+  const [linkKey, setLinkKey] = useState(0);
   useEffect(() => {
-    const onHash = () => setTab(read());
+    const onHash = () => {
+      setTab(read());
+      setLinkKey((k) => k + 1);
+    };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
   const go = (id) => {
     window.location.hash = id;
   };
-  return [tab, go];
+  return [tab, go, linkKey];
 }
 
 // Asks the server whether it is up. Free hosting sleeps when idle, so a slow first answer
@@ -92,7 +107,7 @@ function statusText(server) {
 }
 
 export default function App() {
-  const [tab, go] = useHashTab();
+  const [tab, go, linkKey] = useHashTab();
   const server = useServer();
   const [presets, setPresets] = useState(null);
   const [presetError, setPresetError] = useState(false);
@@ -100,9 +115,18 @@ export default function App() {
 
   // The site picker's raw selection lives here (not inside SiteWorkspace) so it survives
   // switching tabs, and the derived site (lat/lon/name) is shared with the Orbit tab so
-  // it can mark the chosen site on the Moon.
-  const [siteSelection, setSiteSelection] = useState({ presetId: "", customLat: "-89.49", customLon: "-138.67" });
+  // it can mark the chosen site on the Moon. It starts from the link, if the link names a
+  // site, and follows any link pasted in later.
+  const [siteSelection, setSiteSelection] = useState(() =>
+    selectionFromParams(readHash().params, DEFAULT_SELECTION),
+  );
   const [selectedSite, setSelectedSite] = useState(null);
+
+  useEffect(() => {
+    const onHash = () => setSiteSelection((prev) => selectionFromParams(readHash().params, prev));
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
 
   useEffect(() => {
     if (!serverUp) return;
@@ -110,6 +134,16 @@ export default function App() {
       .then(setPresets)
       .catch(() => setPresetError(true));
   }, [serverUp]);
+
+  // A link may name a site this version does not have (an old or edited link): fall back
+  // to the default site instead of showing an empty picker.
+  useEffect(() => {
+    if (!presets) return;
+    setSiteSelection((sel) => {
+      if (!sel.presetId || sel.presetId === CUSTOM || presets.some((p) => p.id === sel.presetId)) return sel;
+      return { ...sel, presetId: "" };
+    });
+  }, [presets, siteSelection.presetId]);
 
   // Give the Orbit tab a sensible default (the first preset) even if the Planner tab
   // has never been opened yet, so a visitor who goes straight to Orbit still sees a
@@ -159,6 +193,7 @@ export default function App() {
         <main className="page planner-page">
           {presets && (
             <SiteWorkspace
+              key={linkKey}
               presets={presets}
               selection={siteSelection}
               onSelectionChange={setSiteSelection}
@@ -176,6 +211,7 @@ export default function App() {
         <main className="page planner-page">
           {presets && (
             <LaunchPlanner
+              key={linkKey}
               presets={presets}
               selection={siteSelection}
               onSelectionChange={setSiteSelection}
@@ -188,6 +224,7 @@ export default function App() {
           )}
         </main>
       )}
+
       {tab === "about" && <AboutTab />}
     </div>
   );
