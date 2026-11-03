@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getJSON, siteQuery, windowsQuery } from "./api.js";
 import SitePicker, { CUSTOM } from "./SitePicker.jsx";
 import WindowsTimeline from "./WindowsTimeline.jsx";
 import VisibilityRibbon from "./VisibilityRibbon.jsx";
+import CopyLinkButton from "./CopyLinkButton.jsx";
+import { parseDateParam, parseNumberParam, patchParams, readHash, selectionPatch } from "./urlState.js";
 
 const YEARS = 5;
 const PER_YEAR = 2;
@@ -49,11 +51,20 @@ export default function LaunchPlanner({ presets, selection, onSelectionChange, o
   const setCustomLat = (v) => onSelectionChange({ ...selection, customLat: v });
   const setCustomLon = (v) => onSelectionChange({ ...selection, customLon: v });
 
-  const [start, setStart] = useState("2027-01-01");
-  const [evalDays, setEvalDays] = useState(60);
-  const [launchSiteId, setLaunchSiteId] = useState(LAUNCH_SITES[0].id);
-  const [transferId, setTransferId] = useState("direct");
-  const [customDays, setCustomDays] = useState(14);
+  // Starting values come from the link (#launch?start=...&eval=...&ls=...&tr=...), if it
+  // has them. Anything missing or invalid falls back to the usual default.
+  const [linkParams] = useState(() => readHash().params);
+  const [start, setStart] = useState(() => parseDateParam(linkParams.get("start"), "2027-01-01", "1960-01-01", "2045-01-01"));
+  const [evalDays, setEvalDays] = useState(() => Math.round(parseNumberParam(linkParams.get("eval"), 10, 365, 60)));
+  const [launchSiteId, setLaunchSiteId] = useState(() => {
+    const v = linkParams.get("ls");
+    return LAUNCH_SITES.some((s) => s.id === v) ? v : LAUNCH_SITES[0].id;
+  });
+  const [transferId, setTransferId] = useState(() => {
+    const v = linkParams.get("tr");
+    return TRANSFERS.some((t) => t.id === v) ? v : "direct";
+  });
+  const [customDays, setCustomDays] = useState(() => parseNumberParam(linkParams.get("td"), 1, 200, 14));
 
   const [result, setResult] = useState(null);
   const [phase, setPhase] = useState("idle"); // idle | loading | ready | error
@@ -80,8 +91,53 @@ export default function LaunchPlanner({ presets, selection, onSelectionChange, o
   const transfer = TRANSFERS.find((t) => t.id === transferId);
   const transitDays = transferId === "custom" ? customDays : transfer.days;
 
+  // --- Shareable link ---------------------------------------------------------------
+  // The settings that change the scan itself (site, start date, evaluation length) also
+  // clear "run" and "sel" from the link: once they change, the results on screen no longer
+  // match them, so a link should not claim to reproduce those results. The scan marks the
+  // link "run=1" again when it finishes.
+  const scanSig = JSON.stringify([site?.lat, site?.lon, start, evalDays]);
+  const liveSigRef = useRef(scanSig);
+  liveSigRef.current = scanSig;
+
+  useEffect(() => {
+    patchParams("launch", {
+      ...selectionPatch(presetId, customLat, customLon),
+      start,
+      eval: evalDays,
+      run: null,
+      sel: null,
+    });
+  }, [presetId, customLat, customLon, start, evalDays]);
+
+  // Launch site and transfer time do not need a new scan (only the launch dates shown on
+  // the cards change), so they are saved without clearing the results markers.
+  useEffect(() => {
+    patchParams("launch", {
+      ls: launchSiteId,
+      tr: transferId,
+      td: transferId === "custom" ? customDays : null,
+    });
+  }, [launchSiteId, transferId, customDays]);
+
+  // Which window card is open.
+  useEffect(() => {
+    patchParams("launch", { sel: selectedIdx === null ? null : selectedIdx + 1 });
+  }, [selectedIdx]);
+
+  // A link made after a scan (run=1) re-runs that scan on load and re-opens the same card.
+  const pendingSel = useRef(null);
+  useEffect(() => {
+    if (linkParams.get("run") !== "1" || !site) return;
+    const sel = Number.parseInt(linkParams.get("sel"), 10);
+    pendingSel.current = Number.isFinite(sel) ? sel - 1 : null;
+    runScan();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function runScan() {
     if (!site) return;
+    const sig = scanSig;
     setPhase("loading");
     setErrorMsg("");
     setResult(null);
@@ -94,7 +150,14 @@ export default function LaunchPlanner({ presets, selection, onSelectionChange, o
       const data = await getJSON(path, { timeoutMs: 60000 });
       setResult(data);
       setPhase("ready");
+      // Mark the link as "this view includes a finished scan", unless the settings were
+      // changed while it ran.
+      if (sig === liveSigRef.current) patchParams("launch", { run: 1 });
+      const want = pendingSel.current;
+      pendingSel.current = null;
+      if (want !== null && want >= 0 && want < data.windows.length) setSelectedIdx(want);
     } catch (err) {
+      pendingSel.current = null;
       setErrorMsg(err.message || "The scan failed.");
       setPhase("error");
     }
@@ -169,6 +232,7 @@ export default function LaunchPlanner({ presets, selection, onSelectionChange, o
         <button type="button" className="btn" onClick={runScan} disabled={!site || phase === "loading"}>
           {phase === "loading" ? "Scanning\u2026" : "Find launch windows"}
         </button>
+        <CopyLinkButton />
       </div>
 
       <div className="launch-controls">
