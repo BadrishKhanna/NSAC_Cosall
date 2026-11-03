@@ -1,6 +1,9 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { API_URL, IS_LOCAL_API, getJSON } from "./api.js";
 import SiteWorkspace from "./SiteWorkspace.jsx";
+// Three.js is sizeable, so the orbit scene is loaded only when the browser is
+// idle after the first paint, rather than blocking the initial page load.
+const OrbitScene = lazy(() => import("./OrbitScene.jsx"));
 
 const WAKE_HINT_MS = 2500; // show the "waking" message if the server has not answered by then
 const RETRY_MS = 3000;
@@ -98,11 +101,15 @@ export default function App() {
         </div>
       </section>
 
+      <Suspense fallback={<div className="orbit-wrap orbit-loading" aria-hidden="true" />}>
+        <OrbitScene />
+      </Suspense>
+
       {presets && <SiteWorkspace presets={presets} />}
       {serverUp && !presets && !presetError && <p className="note-line">Loading the site list…</p>}
       {presetError && <p className="note-line error-line">The site list could not be loaded. Reload the page to try again.</p>}
 
-      <footer>Build step 2 of 8: the results sheet for one site. Comparing sites and dates comes next.</footer>
+      <footer>Build step 3 of 8: real-time Earth, Moon and Sun. Clicking the Moon to pick a site comes next.</footer>
     </main>
   );
 }
