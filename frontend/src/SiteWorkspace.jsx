@@ -4,6 +4,7 @@ import HorizonChart from "./HorizonChart.jsx";
 import VisibilityRibbon from "./VisibilityRibbon.jsx";
 import SnapshotChip from "./SnapshotChip.jsx";
 import SitePicker, { CUSTOM } from "./SitePicker.jsx";
+import CompareSites from "./CompareSites.jsx";
 
 const DAYS = 365;
 const STEP_HOURS = 1;
@@ -264,6 +265,14 @@ export default function SiteWorkspace({ presets, selection, onSelectionChange, o
           </aside>
         </article>
       )}
+      <CompareSites
+        presets={presets}
+        start={start}
+        sunEdge={sunEdge}
+        heightM={heightM}
+        days={DAYS}
+        hold={phase === "loading"}
+      />
     </section>
   );
 }
