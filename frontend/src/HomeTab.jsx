@@ -49,8 +49,7 @@ export default function HomeTab({ go }) {
             <span className="nav-card-eyebrow">Watch</span>
             <h2>The story</h2>
             <p>
-              A lander touches down and finds no Sun and no Earth. Follow it through the terrain,
-              the sites and the dates that decide whether a mission survives.
+              An immersive walkthrough of the software's necessity and what it does.
             </p>
             <span className="nav-card-go">Start the story &rarr;</span>
           </button>
