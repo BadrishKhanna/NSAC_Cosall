@@ -11,7 +11,6 @@ import { patchParams, readHash } from "./urlState.js";
 // to the parent, so it cannot move the Orbit tab's marker or the planner's chosen site.
 
 const SLOTS = 3;
-const DEBOUNCE_MS = 700;
 const CACHE_MAX = 12;
 // Default picks, used only if these presets exist; otherwise the first presets fill in.
 const PREFERRED = ["shackleton-ridge", "connecting-ridge", "peak-near-shackleton"];
@@ -84,10 +83,12 @@ function verdictLines(ready) {
   });
 }
 
-export default function CompareSites({ presets, start, sunEdge, heightM, days, hold }) {
+export default function CompareSites({ presets, start, sunEdge, heightM, days, hold, onBusyChange }) {
   const [slots, setSlots] = useState(() => slotsFromParams(readHash().params, presets));
   const [cols, setCols] = useState(() => Array.from({ length: SLOTS }, () => ({ phase: "idle" })));
   const cacheRef = useRef(new Map());
+  const [running, setRunning] = useState(false);
+  const wantAuto = useRef(readHash().params.get("crun") === "1"); // a shared link saved after a run
 
   // Keep the address bar in step with the three chosen sites, so a copied link includes them.
   useEffect(() => {
@@ -112,15 +113,23 @@ export default function CompareSites({ presets, start, sunEdge, heightM, days, h
   const setSlot = (i, patch) => setSlots((prev) => prev.map((s, j) => (j === i ? { ...s, ...patch } : s)));
   const setCol = (i, value) => setCols((prev) => prev.map((c, j) => (j === i ? value : c)));
 
+  // Tell the planner above when this section is computing, so the two never overlap.
+  useEffect(() => {
+    onBusyChange?.(running);
+  }, [running, onBusyChange]);
+
   // Fetch the sites ONE AFTER ANOTHER (never in parallel): the SPICE library is not
   // thread-safe, and the API runs requests in a thread pool. `hold` is true while the
-  // planner's own request is running, so the two never overlap either.
-  useEffect(() => {
-    if (hold) return undefined;
-    let cancelled = false;
-    const timer = setTimeout(async () => {
+  // planner's own request is running, so the two never overlap either. Nothing is fetched
+  // until the visitor presses "Compare sites".
+  const runIdRef = useRef(0);
+  async function runCompare() {
+    if (hold || running) return;
+    const id = ++runIdRef.current;
+    setRunning(true);
+    try {
       for (let i = 0; i < SLOTS; i++) {
-        if (cancelled) return;
+        if (id !== runIdRef.current) return;
         const key = keys[i];
         const s = sites[i];
         if (key === null) {
@@ -149,21 +158,25 @@ export default function CompareSites({ presets, start, sunEdge, heightM, days, h
           if (cacheRef.current.size > CACHE_MAX) {
             cacheRef.current.delete(cacheRef.current.keys().next().value);
           }
-          if (cancelled) return;
           setCol(i, { phase: "ready", key, name: s.name, data });
         } catch (err) {
-          if (cancelled) return;
           setCol(i, { phase: "error", key, name: s.name, error: err.message || "The request failed." });
         }
       }
-    }, DEBOUNCE_MS);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-    // keysJoined stands for every input that matters (sites, start, Sun edge, height).
+    } finally {
+      if (id === runIdRef.current) setRunning(false);
+    }
+  }
+
+  // A shared link saved after a comparison opens with it already computed, once the
+  // planner above has finished its own run.
+  useEffect(() => {
+    if (wantAuto.current && !hold) {
+      wantAuto.current = false;
+      runCompare();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keysJoined, hold]);
+  }, [hold]);
 
   // What to show: an invalid custom site reads as empty, not as its old result.
   const view = cols.map((c, i) => (keys[i] === null ? { phase: "idle" } : c));
@@ -173,9 +186,16 @@ export default function CompareSites({ presets, start, sunEdge, heightM, days, h
   const stale = ready.length > 0 && view.some((c, i) => keys[i] !== null && c.key !== keys[i]);
   const loadingIdx = view.findIndex((c) => c.phase === "loading");
   const showFlatNote = ready.some((r) => !r.data.site.terrain);
+  const everRan = view.some((c) => c.phase !== "idle");
+  const current = ready.length > 0 && !stale && view.every((c, i) => keys[i] === null || c.key === keys[i]);
+
+  // Mark the link as "this view includes a finished comparison" only while it is current.
+  useEffect(() => {
+    patchParams("planner", { crun: current ? 1 : null });
+  }, [current]);
 
   const cell = (c, i) => {
-    if (keys[i] === null) return "\u2014";
+    if (keys[i] === null || c.phase === "idle") return "\u2014";
     if (c.phase === "error") return "n/a";
     return "\u2026";
   };
@@ -207,6 +227,15 @@ export default function CompareSites({ presets, start, sunEdge, heightM, days, h
         ))}
       </div>
 
+      <div className="cmp-run">
+        <button type="button" className="btn" onClick={runCompare} disabled={hold || running || !start || keys.every((k) => k === null)}>
+          {running ? "Comparing\u2026" : stale ? "Update comparison" : "Compare sites"}
+        </button>
+      </div>
+      {!everRan && !hold && <p className="note-line">Pick three sites, then press Compare sites.</p>}
+      {stale && !running && !hold && (
+        <p className="note-line">The sites or settings changed. Press Update comparison to refresh the table.</p>
+      )}
       {hold && <p className="note-line">Waiting for the main result above to finish&hellip;</p>}
       {!hold && loadingIdx >= 0 && (
         <p className="note-line">
