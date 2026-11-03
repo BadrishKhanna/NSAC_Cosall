@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
 import { API_URL, IS_LOCAL_API, getJSON } from "./api.js";
+import SiteWorkspace from "./SiteWorkspace.jsx";
 
 const WAKE_HINT_MS = 2500; // show the "waking" message if the server has not answered by then
 const RETRY_MS = 3000;
 const GIVE_UP_MS = 120000; // stop retrying after two minutes
-
-function formatCoords(lat, lon) {
-  return `${Math.abs(lat).toFixed(3)}° ${lat < 0 ? "S" : "N"}, ${Math.abs(lon).toFixed(3)}° ${lon < 0 ? "W" : "E"}`;
-}
 
 // Asks the server whether it is up. Free hosting sleeps when idle, so a slow first answer
 // is normal: keep retrying and tell the visitor what is happening.
@@ -91,36 +88,21 @@ export default function App() {
         </p>
       </header>
 
-      <section className="sheet" aria-labelledby="server-h">
-        <h2 id="server-h">Server</h2>
-        <p className={`status ${server.phase}`} role="status">
-          {statusText(server)}
-        </p>
-        <p className="caption">{API_URL.replace(/^https?:\/\//, "")}</p>
-      </section>
-
-      <section aria-labelledby="sites-h">
-        <h2 id="sites-h">Sites to start from</h2>
-        {presets ? (
-          <ul className="sites">
-            {presets.map((p) => (
-              <li key={p.id}>
-                <div>
-                  <h3>{p.name}</h3>
-                  <p className="caption">{p.note}</p>
-                </div>
-                <p className="coords">{formatCoords(p.lat, p.lon)}</p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="caption">
-            {presetError ? "The site list could not be loaded. Reload the page to try again." : "The site list appears when the server is ready."}
+      <section className="sheet server-sheet" aria-labelledby="server-h">
+        <div>
+          <h2 id="server-h">Server</h2>
+          <p className={`status ${server.phase}`} role="status">
+            {statusText(server)}
           </p>
-        )}
+          <p className="caption">{API_URL.replace(/^https?:\/\//, "")}</p>
+        </div>
       </section>
 
-      <footer>Build step 1 of 8: connecting the app to the server. The results sheet comes next.</footer>
+      {presets && <SiteWorkspace presets={presets} />}
+      {serverUp && !presets && !presetError && <p className="note-line">Loading the site list…</p>}
+      {presetError && <p className="note-line error-line">The site list could not be loaded. Reload the page to try again.</p>}
+
+      <footer>Build step 2 of 8: the results sheet for one site. Comparing sites and dates comes next.</footer>
     </main>
   );
 }
