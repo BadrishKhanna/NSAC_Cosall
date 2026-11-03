@@ -6,3 +6,9 @@ services:
     buildCommand: pip install -r backend/requirements-api.txt && python backend/download_data.py
     startCommand: cd backend && uvicorn api:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
+
+  - type: web
+    name: cosall
+    runtime: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist

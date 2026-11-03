@@ -1,0 +1,157 @@
+:root {
+  --page: #e1e4e2;
+  --sheet: #f2f3f1;
+  --ink: #14171a;
+  --muted: #565c61;
+  --rule: #bfc4c1;
+  --risk: #a8452b;
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #151514;
+    --sheet: #1e1e1c;
+    --ink: #e9e7e2;
+    --muted: #a19f99;
+    --rule: #3a3a37;
+    --risk: #e0866a;
+    color-scheme: dark;
+  }
+}
+
+html {
+  scroll-padding-top: env(safe-area-inset-top, 0px);
+  -webkit-text-size-adjust: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font: 400 15px/1.5 "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Newsreader", Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(44px, 7vw, 72px);
+  line-height: 1;
+}
+
+h2 {
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 500;
+}
+
+h3 {
+  font-size: 19px;
+  line-height: 1.25;
+  font-weight: 500;
+}
+
+p {
+  margin: 0;
+}
+
+.page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 64px 24px 72px;
+}
+
+.lede {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: clamp(19px, 2.2vw, 23px);
+  line-height: 1.5;
+  max-width: 32em;
+  margin-top: 20px;
+}
+
+section {
+  margin-top: 56px;
+}
+
+.sheet {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 24px 28px 22px;
+}
+
+.status {
+  margin-top: 12px;
+  max-width: 44em;
+}
+
+.status.offline,
+.status.nodata {
+  color: var(--risk);
+}
+
+.caption {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 6px;
+  max-width: 52em;
+}
+
+.sites {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+}
+
+.sites li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 24px;
+  padding: 14px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.sites li:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+
+.coords {
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+footer {
+  margin-top: 64px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .page {
+    padding: 40px 18px 56px;
+  }
+  .sites li {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
