@@ -6,6 +6,7 @@ import LaunchPlanner from "./LaunchPlanner.jsx";
 import AboutTab from "./AboutTab.jsx";
 import { CUSTOM } from "./SitePicker.jsx";
 import { readHash, selectionFromParams } from "./urlState.js";
+import MusicToggle from "./MusicToggle.jsx";
 // Three.js is sizeable, so the orbit scene is loaded only when the tab is opened,
 // rather than blocking the initial page load.
 const OrbitScene = lazy(() => import("./OrbitScene.jsx"));
@@ -173,6 +174,7 @@ export default function App() {
         <button type="button" className={tab === "about" ? "active" : ""} onClick={() => go("about")}>
           About
         </button>
+        <MusicToggle />
       </nav>
 
       {server.phase !== "ready" && (
