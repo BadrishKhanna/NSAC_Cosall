@@ -59,26 +59,32 @@ export default function HomeTab({ go }) {
         <section aria-labelledby="about-h">
           <h2 id="about-h">How this works</h2>
           <p className="body-text">
-            Sun and Earth positions come from NASA&rsquo;s SPICE toolkit and the DE440 planetary
-            ephemeris &mdash; the same kind of data used to plan real missions. Terrain near the
-            south pole comes from NASA&rsquo;s LOLA laser-altimeter elevation model. Combining the
-            two gives a real terrain horizon at each site, so &ldquo;is the Sun up&rdquo; accounts
-            for the hills and crater rims around you, not just a flat-Moon approximation.
+            Cosall answers one question: from a given spot near the Moon&rsquo;s south pole, when
+            are the Sun and Earth actually in view? Their positions come from NASA&rsquo;s SPICE
+            toolkit and the DE440 ephemeris, the same kind of data real missions are planned
+            with. The ground comes from NASA&rsquo;s LOLA laser-altimeter elevation model, which
+            gives every site its own terrain horizon, so a ridge a few degrees tall can hide a Sun
+            that is only a few degrees up.
           </p>
           <p className="body-text">
-            This is a geometric visibility model, not a full illumination or thermal simulation:
-            it does not account for dust, atmospheric-free scattering (there is none to speak of),
-            spacecraft antenna patterns, or the exact shape of a lander. Treat the numbers as a
-            fast, honest first pass for comparing sites and dates &mdash; the kind of thing that
-            used to take a specialist tool and a lot of patience.
+            From that, the Site planner shows the sunlight and Earth-view windows for any site and
+            date range, and compares up to three sites side by side. The Launch planner then
+            scans five years of landing dates, ranks the best windows, and works back to a launch
+            date. The Orbit view and the story show the same geometry in 3D and on screen.
+          </p>
+          <p className="body-text">
+            It is a geometric model, not a power or thermal simulation. It treats Earth as a
+            point, ignores antenna patterns and dust, and has terrain data only south of
+            80&deg;S. Use it as a fast, honest first pass for comparing places and dates, not as
+            a mission design.
           </p>
         </section>
 
         <footer>
-          Data: NASA NAIF SPICE (DE440 ephemeris, lunar orientation) and the LOLA south-polar
-          elevation model (Barker et al. 2023). Earth and Moon imagery in the orbit view:
-          Solar System Scope (solarsystemscope.com/textures), based on NASA imagery, CC BY 4.0.
-          Built for the NASA Space Apps Challenge.
+          Data and credits: NASA NAIF SPICE (DE440 ephemeris and lunar orientation); the LOLA
+          south-polar elevation model (Barker et al. 2023); Earth and Moon textures in the orbit
+          view from Solar System Scope (solarsystemscope.com/textures), based on NASA imagery,
+          CC BY 4.0. Made for the NASA Space Apps Challenge.
         </footer>
       </div>
     </>
