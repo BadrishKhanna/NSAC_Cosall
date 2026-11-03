@@ -19,16 +19,16 @@ Feature freeze: 2026-11-08. Documentation pass begins 20 days before submission.
    horizon mask, power and comms metrics (percent lit, longest darkness,
    Earth-visible percent, longest comms gap), horizon view, timeline, per-date
    Sun/Earth snapshot.
-1. Comparison (PARTIAL): the landing-window scan and timeline (Launch planner tab)
+1. Comparison (Done): the landing-window scan and timeline (Launch planner tab)
    covers date comparison for one site. Side-by-side comparison of multiple sites
-   is not yet built.
+   is built.
 2. Polish (DONE): 3D Moon/Earth/Sun orbit scene with real textures, site marker,
    equator reference ring, live phase/distance/sub-Earth-point readout; two
    presets (Apollo 11, Shackleton ridge); plain-language summaries throughout.
 3. Launch date suggester (DONE, pulled forward from the original later-step plan):
    multi-year landing-window scan, graphical timeline, launch-site and
    transfer-time selection, 3-year mission outlook.
-Not yet built: multi-site compare mode, a dedicated validation/"how we know it's
+Not yet built: a dedicated validation/"how we know it's
 right" page, calendar heatmap with month labels, sunrise/sunset list, ground
 station (DSN) passes, power/battery estimator, eclipse events, share/export.
 Fidelity statement: geometric Sun/Earth visibility from a spherical-Moon model
@@ -75,6 +75,8 @@ simulation.
   `VisibilityRibbon.jsx` (auto-binning visibility strip, any date range),
   `WindowsTimeline.jsx` (Sun/Earth/Both curves with numbered picks), `api.js`
   (fetch helpers, query builders).
+- 'CompareSites.jsx' (Addition to site planner) - Site comparison feature is added to 
+  the site planner tab.
 
 ## Backend API
 - `GET /api/health` — always 200 while the server is up; `data_ready` reports
