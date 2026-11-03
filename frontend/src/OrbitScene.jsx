@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { getJSON, siteQuery } from "./api.js";
 import SnapshotChip from "./SnapshotChip.jsx";
+import SiteSkyView from "./SiteSkyView.jsx";
 
 // One scene unit = this many real kilometers. Chosen so the Earth (radius 6371 km)
 // renders at a comfortable size; the true Earth-Moon distance then falls out of the
@@ -88,6 +89,8 @@ export default function OrbitScene({ site }) {
   const [errorMsg, setErrorMsg] = useState("");
   const [siteStatus, setSiteStatus] = useState(null);
   const [siteError, setSiteError] = useState(false);
+  // "space": the Earth-Moon-Sun scene. "sky": the same clock, seen from the landing site.
+  const [mode, setMode] = useState("space");
 
   // --- Three.js setup: runs once ---------------------------------------
   useEffect(() => {
@@ -207,9 +210,10 @@ export default function OrbitScene({ site }) {
     // you see is always the real geometry for the displayed time, never a guess.
     function animate() {
       if (disposed) return;
+      raf = requestAnimationFrame(animate);
+      if (stateRef.current.paused) return; // the sky view is covering the scene: save the GPU
       controls.update();
       renderer.render(scene, camera);
-      raf = requestAnimationFrame(animate);
     }
     raf = requestAnimationFrame(animate);
 
@@ -382,6 +386,20 @@ export default function OrbitScene({ site }) {
   }, []);
 
   useEffect(() => {
+    stateRef.current.paused = mode === "sky";
+  }, [mode]);
+
+  // Without a site there is nothing to look from, so fall back to the space view.
+  useEffect(() => {
+    if (!site && mode === "sky") setMode("space");
+  }, [site, mode]);
+
+  useEffect(() => {
+    if (mode === "sky") {
+      // the sky view brings its own site data; forget the key so the box refreshes on return
+      lastKeyRef.current = "";
+      return;
+    }
     if (!site) {
       wantedRef.current = null;
       setSiteStatus(null);
@@ -395,13 +413,17 @@ export default function OrbitScene({ site }) {
     lastKeyRef.current = key;
     wantedRef.current = { lat: site.lat, lon: site.lon, dateStr, hour };
     drainSiteStatus();
-  }, [site, time, drainSiteStatus]);
+  }, [site, time, mode, drainSiteStatus]);
 
   const readout = system ? moonReadout(system) : null;
 
   return (
     <div className="orbit-fullscreen">
-      <div className="orbit-canvas-full" ref={mountRef} />
+      <div className="orbit-canvas-full" ref={mountRef} style={{ visibility: mode === "sky" ? "hidden" : "visible" }} />
+
+      {mode === "sky" && site && (
+        <SiteSkyView site={site} time={time} earthIllumPct={readout ? 100 - readout.illumPct : null} />
+      )}
 
       <div className="orbit-overlay orbit-overlay-tl">
         <input
@@ -426,16 +448,33 @@ export default function OrbitScene({ site }) {
         <button type="button" className="btn" onClick={() => setTime(nowClamped())}>
           Now
         </button>
-        <div className="scale-toggle" role="group" aria-label="Distance scale">
-          <button type="button" className={!trueScale ? "active" : ""} onClick={() => setTrueScale(false)}>
-            Compressed
+        <div className="scale-toggle mode-toggle" role="group" aria-label="View">
+          <button type="button" className={mode === "space" ? "active" : ""} onClick={() => setMode("space")}>
+            Space view
           </button>
-          <button type="button" className={trueScale ? "active" : ""} onClick={() => setTrueScale(true)}>
-            True scale
+          <button
+            type="button"
+            className={mode === "sky" ? "active" : ""}
+            onClick={() => setMode("sky")}
+            disabled={!site}
+            title={site ? "See the sky from the chosen landing site" : "Choose a site in the Site planner first"}
+          >
+            From the site
           </button>
         </div>
+        {mode === "space" && (
+          <div className="scale-toggle" role="group" aria-label="Distance scale">
+            <button type="button" className={!trueScale ? "active" : ""} onClick={() => setTrueScale(false)}>
+              Compressed
+            </button>
+            <button type="button" className={trueScale ? "active" : ""} onClick={() => setTrueScale(true)}>
+              True scale
+            </button>
+          </div>
+        )}
       </div>
 
+      {mode === "space" && (
       <div className="orbit-overlay orbit-overlay-tr">
         <h3>Right now, from real data</h3>
         {readout ? (
@@ -469,8 +508,9 @@ export default function OrbitScene({ site }) {
           ring) to see real day and night sweep across it over about a month.
         </p>
       </div>
+      )}
 
-      {site && (
+      {mode === "space" && site && (
         <div className="orbit-overlay orbit-overlay-br">
           <h3>{site.name}</h3>
           {siteStatus ? (
