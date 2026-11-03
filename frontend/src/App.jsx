@@ -1,13 +1,36 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { API_URL, IS_LOCAL_API, getJSON } from "./api.js";
+import HomeTab from "./HomeTab.jsx";
 import SiteWorkspace from "./SiteWorkspace.jsx";
-// Three.js is sizeable, so the orbit scene is loaded only when the browser is
-// idle after the first paint, rather than blocking the initial page load.
+// Three.js is sizeable, so the orbit scene is loaded only when the tab is opened,
+// rather than blocking the initial page load.
 const OrbitScene = lazy(() => import("./OrbitScene.jsx"));
 
 const WAKE_HINT_MS = 2500; // show the "waking" message if the server has not answered by then
 const RETRY_MS = 3000;
 const GIVE_UP_MS = 120000; // stop retrying after two minutes
+
+const TABS = ["home", "orbit", "planner"];
+
+// Reads the current tab from the URL hash (#orbit, #planner), so each tab has its own
+// shareable, bookmarkable, reload-safe link, with no server-side routing configuration
+// needed (the hash never reaches the server).
+function useHashTab() {
+  const read = () => {
+    const h = window.location.hash.replace("#", "");
+    return TABS.includes(h) ? h : "home";
+  };
+  const [tab, setTab] = useState(read);
+  useEffect(() => {
+    const onHash = () => setTab(read());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  const go = (id) => {
+    window.location.hash = id;
+  };
+  return [tab, go];
+}
 
 // Asks the server whether it is up. Free hosting sleeps when idle, so a slow first answer
 // is normal: keep retrying and tell the visitor what is happening.
@@ -57,8 +80,6 @@ function statusText(server) {
       return "Checking the server.";
     case "waking":
       return "Waking the server. Free hosting sleeps when idle, so the first visit can take up to a minute.";
-    case "ready":
-      return "Server ready. Ephemeris and terrain data are loaded.";
     case "nodata":
       return `The server is running but is missing data files: ${server.health.missing.join(", ")}. Check the build log on Render, or run python backend/download_data.py locally.`;
     default:
@@ -69,6 +90,7 @@ function statusText(server) {
 }
 
 export default function App() {
+  const [tab, go] = useHashTab();
   const server = useServer();
   const [presets, setPresets] = useState(null);
   const [presetError, setPresetError] = useState(false);
@@ -82,34 +104,42 @@ export default function App() {
   }, [serverUp]);
 
   return (
-    <main className="page">
-      <header>
-        <h1>Cosall</h1>
-        <p className="lede">
-          Compare lunar south-pole landing sites and dates: how much sunlight, how long Earth is in view,
-          and the terrain in between.
+    <div className={`app app-${tab}`}>
+      <nav className="tabbar" aria-label="Sections">
+        <button type="button" className={tab === "home" ? "active" : ""} onClick={() => go("home")}>
+          Cosall
+        </button>
+        <button type="button" className={tab === "orbit" ? "active" : ""} onClick={() => go("orbit")}>
+          Orbit view
+        </button>
+        <button type="button" className={tab === "planner" ? "active" : ""} onClick={() => go("planner")}>
+          Site planner
+        </button>
+      </nav>
+
+      {server.phase !== "ready" && (
+        <p className={`status-banner status ${server.phase}`} role="status">
+          {statusText(server)}
         </p>
-      </header>
+      )}
 
-      <section className="sheet server-sheet" aria-labelledby="server-h">
-        <div>
-          <h2 id="server-h">Server</h2>
-          <p className={`status ${server.phase}`} role="status">
-            {statusText(server)}
-          </p>
-          <p className="caption">{API_URL.replace(/^https?:\/\//, "")}</p>
-        </div>
-      </section>
+      {tab === "home" && <HomeTab go={go} />}
 
-      <Suspense fallback={<div className="orbit-wrap orbit-loading" aria-hidden="true" />}>
-        <OrbitScene />
-      </Suspense>
+      {tab === "orbit" && (
+        <Suspense fallback={<div className="orbit-fullscreen orbit-loading" aria-hidden="true" />}>
+          <OrbitScene />
+        </Suspense>
+      )}
 
-      {presets && <SiteWorkspace presets={presets} />}
-      {serverUp && !presets && !presetError && <p className="note-line">Loading the site list…</p>}
-      {presetError && <p className="note-line error-line">The site list could not be loaded. Reload the page to try again.</p>}
-
-      <footer>Build step 3 of 8: real-time Earth, Moon and Sun. Clicking the Moon to pick a site comes next.</footer>
-    </main>
+      {tab === "planner" && (
+        <main className="page planner-page">
+          {presets && <SiteWorkspace presets={presets} />}
+          {serverUp && !presets && !presetError && <p className="note-line">Loading the site list&hellip;</p>}
+          {presetError && (
+            <p className="note-line error-line">The site list could not be loaded. Reload the page to try again.</p>
+          )}
+        </main>
+      )}
+    </div>
   );
 }

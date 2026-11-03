@@ -28,7 +28,7 @@ function SnapshotChip({ kind, up, elevation, label, upText, downText }) {
       <span className="chip-dot" />
       <span>
         <b>{label}</b> {up ? "up" : "down"}
-        <span className="chip-el"> ({sign}{Math.abs(elevation).toFixed(1)}\u00b0)</span>
+        <span className="chip-el"> ({sign}{Math.abs(elevation).toFixed(1)}&deg;)</span>
         {" \u2014 "}
         {up ? upText : downText}
       </span>

@@ -500,47 +500,9 @@ aside .cap {
   color: var(--muted);
 }
 
-/* Orbit scene (step 3) -------------------------------------------------- */
-.orbit-section {
-  margin-top: 56px;
-}
-.orbit-wrap {
-  border-radius: 2px;
-  overflow: hidden;
-  background: #000;
-  position: relative;
-}
-.orbit-canvas {
-  width: 100%;
-  height: 460px;
-  touch-action: none;
-}
-.orbit-error {
-  position: absolute;
-  bottom: 12px;
-  left: 14px;
-  right: 14px;
-  margin: 0;
-  background: rgba(20, 23, 26, 0.85);
-  padding: 8px 12px;
-  border-radius: 2px;
-}
-.orbit-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px;
-  margin-top: 16px;
-}
-.orbit-controls select,
-.orbit-controls input[type="datetime-local"] {
-  font: 500 14px/1.3 "Archivo", system-ui, sans-serif;
-  color: var(--ink);
-  background: var(--sheet);
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  padding: 8px 10px;
-}
+/* Orbit scene (step 3): shared button/toggle styles. Layout classes
+   (.orbit-fullscreen, .orbit-overlay-*, etc.) are defined further below,
+   next to the tab/full-screen structure they belong to. -------------- */
 .btn {
   font: 500 14px/1.3 "Archivo", system-ui, sans-serif;
   color: var(--sheet);
@@ -568,26 +530,236 @@ aside .cap {
   background: var(--ink);
   color: var(--sheet);
 }
-.orbit-readout {
+
+/* Tabs, status banner, and full-screen orbit layout (step 3b) --------- */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.tabbar {
+  display: flex;
+  gap: 4px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--rule);
+  flex: none;
+}
+.tabbar button {
+  font: 500 15px/1.3 "Archivo", system-ui, sans-serif;
   color: var(--muted);
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.tabbar button:first-child {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 19px;
+  color: var(--ink);
+  margin-right: 12px;
+}
+.tabbar button.active {
+  color: var(--ink);
+  background: var(--sheet);
+}
+.status-banner {
+  margin: 0;
+  padding: 10px 24px;
   font-size: 13px;
-  margin-top: 10px;
+  border-bottom: 1px solid var(--rule);
+  flex: none;
+}
+.status-banner.offline,
+.status-banner.nodata {
+  color: var(--risk);
 }
 
-@media (max-width: 900px) {
-  .orbit-canvas {
-    height: 320px;
-  }
-  .orbit-controls {
-    gap: 10px;
-  }
+.app-orbit {
+  height: 100vh;
+}
+.app-orbit .orbit-fullscreen {
+  flex: 1;
 }
 
+.orbit-fullscreen {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  background: #000;
+  overflow: hidden;
+}
+.orbit-canvas-full {
+  position: absolute;
+  inset: 0;
+}
 .orbit-loading {
-  height: 460px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sky-ink);
+  font-size: 14px;
 }
-@media (max-width: 900px) {
-  .orbit-loading {
-    height: 320px;
+.orbit-overlay {
+  position: absolute;
+  background: rgba(20, 23, 26, 0.82);
+  border: 1px solid rgba(185, 191, 197, 0.25);
+  border-radius: 2px;
+  padding: 14px 16px;
+  color: #e9e7e2;
+  z-index: 2;
+}
+.orbit-overlay-tl {
+  top: 16px;
+  left: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.orbit-overlay-tl input,
+.orbit-overlay-tl select {
+  font: 500 13px/1.3 "Archivo", system-ui, sans-serif;
+  color: #e9e7e2;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(185, 191, 197, 0.3);
+  border-radius: 2px;
+  padding: 7px 8px;
+}
+.orbit-overlay-tl .btn {
+  background: #e9e7e2;
+  color: #14171a;
+}
+.orbit-overlay-tl .scale-toggle {
+  border-color: rgba(185, 191, 197, 0.3);
+}
+.orbit-overlay-tl .scale-toggle button {
+  background: transparent;
+  color: #e9e7e2;
+}
+.orbit-overlay-tl .scale-toggle button.active {
+  background: #e9e7e2;
+  color: #14171a;
+}
+.orbit-overlay-tr {
+  top: 16px;
+  right: 16px;
+  max-width: 260px;
+}
+.orbit-overlay-tr h3 {
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+.orbit-overlay-tr dl {
+  margin: 0;
+}
+.orbit-overlay-tr dl div {
+  padding: 6px 0;
+  border-top: 1px solid rgba(185, 191, 197, 0.2);
+}
+.orbit-overlay-tr dt {
+  color: #b9bfc5;
+  font-size: 12px;
+}
+.orbit-overlay-tr dd {
+  margin: 2px 0 0;
+  font-weight: 500;
+  font-size: 14px;
+}
+.orbit-hint {
+  color: #b9bfc5;
+  font-size: 12px;
+  margin-top: 12px;
+  line-height: 1.5;
+}
+.orbit-error {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 2;
+  margin: 0;
+  background: rgba(168, 69, 43, 0.15);
+  border: 1px solid var(--risk);
+  padding: 10px 14px;
+  border-radius: 2px;
+}
+
+@media (max-width: 700px) {
+  .orbit-overlay-tr {
+    max-width: none;
+    left: 16px;
+    right: 16px;
+    top: auto;
+    bottom: 16px;
+  }
+  .orbit-overlay-tl {
+    right: 16px;
+  }
+}
+
+/* Home tab -------------------------------------------------------------- */
+.home {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 56px 24px 72px;
+}
+.nav-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 48px;
+}
+.nav-card {
+  text-align: left;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 24px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.nav-card:hover {
+  border-color: var(--ink);
+}
+.nav-card-eyebrow {
+  color: var(--sun);
+  font-size: 13px;
+  font-weight: 500;
+}
+.nav-card h2 {
+  font-size: 22px;
+}
+.nav-card p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.nav-card-go {
+  margin-top: 8px;
+  font-weight: 500;
+  font-size: 14px;
+}
+.body-text {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 18px;
+  line-height: 1.65;
+  max-width: 40em;
+  margin-top: 16px;
+}
+.coming-soon {
+  border: 1px dashed var(--rule);
+  border-radius: 2px;
+  padding: 20px 24px;
+}
+
+@media (max-width: 700px) {
+  .nav-cards {
+    grid-template-columns: 1fr;
   }
 }
