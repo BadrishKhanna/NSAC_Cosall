@@ -1047,31 +1047,73 @@ table.metrics td.cmp-best {
 }
 
 
-/* About tab ---------------------------------------------------------------- */
+/* About tab and hero artwork ----------------------------------------------- */
 
-/* Hero: black "sky window" with the ridge, Sun and Earth, as in the Site planner */
+/* Full-bleed artwork shared by the Home and About heroes. The SVG fills the hero and
+   the text sits on top of it. */
+.hero-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.hero-star {
+  fill: var(--sky-ink);
+}
+.hero-trail {
+  opacity: 0.7;
+}
+
+/* Both heroes fill the first screen (the 72px is the height of the tab bar). */
+.home-hero,
 .about-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: calc(100vh - 72px);
+  min-height: calc(100svh - 72px);
+  overflow: hidden;
   background: var(--sky);
   color: #e9e7e2;
 }
+.home-hero-inner,
 .about-hero-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
   max-width: 1000px;
   margin: 0 auto;
-  padding: 56px 24px 32px;
+  padding: 72px 24px;
+}
+.home-hero .lede,
+.about-hero .lede {
+  color: var(--sky-ink);
+}
+
+/* Home hero: large title and intro, satellite artwork behind */
+.home-hero h1 {
+  font-size: clamp(64px, 11vw, 132px);
+  line-height: 0.95;
+}
+.home-hero .lede {
+  max-width: 28em;
+}
+
+/* About hero: the horizon scene sits at the bottom, so lift the text above the ridge */
+.about-hero-inner {
+  padding-bottom: 160px;
 }
 .about-hero h1 {
   max-width: 14em;
 }
-.about-hero .lede {
-  color: var(--sky-ink);
-}
-.about-sky {
-  display: block;
-  width: 100%;
-  height: clamp(110px, 20vw, 210px);
-}
-.about-sun-trail {
-  opacity: 0.7;
+
+/* On narrow screens the artwork runs behind the text, so soften it */
+@media (max-width: 800px) {
+  .hero-art {
+    opacity: 0.55;
+  }
 }
 
 /* Page body */
@@ -1087,10 +1129,9 @@ table.metrics td.cmp-best {
   width: 100%;
   aspect-ratio: 21 / 9;
   object-fit: cover;
-  object-position: center 55%;
   background: var(--sheet);
   border: 1px solid var(--rule);
-  border-radius: 16px;
+  border-radius: 2px;
 }
 
 /* Each section: short heading on the left, content on the right */
