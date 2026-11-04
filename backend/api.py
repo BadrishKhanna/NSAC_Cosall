@@ -1,5 +1,6 @@
+import threading
 from datetime import datetime, timedelta
-from functools import lru_cache
+from functools import lru_cache, wraps
 
 import numpy as np
 from fastapi import FastAPI, HTTPException, Query
@@ -17,6 +18,23 @@ app = FastAPI(title="Lunar site planner API",
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET"], allow_headers=["*"])
 # TODO before deploying: replace allow_origins=["*"] with the frontend's address.
+
+
+# SPICE keeps its state in global (non thread-safe) memory, and FastAPI runs plain `def`
+# endpoints in a thread pool. Two requests inside SPICE at once (for example /api/system
+# from the Orbit view and /api/site from the sky view) corrupt its call stack and fail with
+# "SPICE(BADSUBSCRIPT) ... trcpkg". Every endpoint that calls SPICE takes this lock, so they
+# run one at a time.
+_spice_lock = threading.RLock()
+
+
+def _serialized(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        with _spice_lock:
+            return fn(*args, **kwargs)
+    return wrapper
+
 
 
 def kernels_self_test():
@@ -84,6 +102,7 @@ def presets():
 
 
 @app.get("/api/system")
+@_serialized
 def system(time: str = Query(..., description="UTC time, e.g. 2027-06-15T12:00:00")):
     """Real Sun/Earth/Moon geometry for one instant, for the 3D orbit scene.
     Returns Earth->Moon, Earth->Sun and Moon->Sun vectors (km, J2000 inertial frame),
@@ -114,6 +133,7 @@ def system(time: str = Query(..., description="UTC time, e.g. 2027-06-15T12:00:0
 
 
 @app.get("/api/site")
+@_serialized
 def site(lat: float | None = Query(None, ge=-90, le=90),
          lon: float | None = Query(None, ge=-360, le=360),
          x_m: float | None = None, y_m: float | None = None,
@@ -174,6 +194,7 @@ def site(lat: float | None = Query(None, ge=-90, le=90),
 
 
 @app.get("/api/windows")
+@_serialized
 def windows(lat: float | None = Query(None, ge=-90, le=90),
            lon: float | None = Query(None, ge=-360, le=360),
            x_m: float | None = None, y_m: float | None = None,
