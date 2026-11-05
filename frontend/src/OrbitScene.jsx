@@ -77,7 +77,7 @@ function bodyFixedPoint(latDeg, lonDeg, radius) {
   );
 }
 
-export default function OrbitScene({ site }) {
+export default function OrbitScene({ site, active = true }) {
   const mountRef = useRef(null);
   const stateRef = useRef({}); // holds everything the animation loop needs, so effects don't re-run per frame
 
@@ -220,6 +220,7 @@ export default function OrbitScene({ site }) {
     function onResize() {
       const w = mount.clientWidth;
       const h = mount.clientHeight;
+      if (!w || !h) return; // the tab is hidden: nothing to size
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
@@ -324,7 +325,7 @@ export default function OrbitScene({ site }) {
 
   // --- Advance the simulated clock while playing ------------------------
   useEffect(() => {
-    if (!playing) return;
+    if (!playing || !active) return;
     const hoursPerSec = SPEEDS[speedIdx].hoursPerSec;
     const id = setInterval(() => {
       setTime((t) => {
@@ -337,7 +338,7 @@ export default function OrbitScene({ site }) {
       });
     }, 500);
     return () => clearInterval(id);
-  }, [playing, speedIdx]);
+  }, [playing, speedIdx, active]);
 
   // --- Live power/DTE status for the chosen site, at the current simulated time -------
   // Reuses /api/site (the same terrain-aware calculation the Planner tab uses) rather
@@ -386,8 +387,8 @@ export default function OrbitScene({ site }) {
   }, []);
 
   useEffect(() => {
-    stateRef.current.paused = mode === "sky";
-  }, [mode]);
+    stateRef.current.paused = mode === "sky" || !active; // hidden tab or sky view: do not draw
+  }, [mode, active]);
 
   // Without a site there is nothing to look from, so fall back to the space view.
   useEffect(() => {
@@ -395,6 +396,7 @@ export default function OrbitScene({ site }) {
   }, [site, mode]);
 
   useEffect(() => {
+    if (!active) return; // hidden tab: no requests in the background
     if (mode === "sky") {
       // the sky view brings its own site data; forget the key so the box refreshes on return
       lastKeyRef.current = "";
@@ -413,7 +415,7 @@ export default function OrbitScene({ site }) {
     lastKeyRef.current = key;
     wantedRef.current = { lat: site.lat, lon: site.lon, dateStr, hour };
     drainSiteStatus();
-  }, [site, time, mode, drainSiteStatus]);
+  }, [site, time, mode, active, drainSiteStatus]);
 
   const readout = system ? moonReadout(system) : null;
 
@@ -421,7 +423,7 @@ export default function OrbitScene({ site }) {
     <div className="orbit-fullscreen">
       <div className="orbit-canvas-full" ref={mountRef} style={{ visibility: mode === "sky" ? "hidden" : "visible" }} />
 
-      {mode === "sky" && site && (
+      {mode === "sky" && site && active && (
         <SiteSkyView site={site} time={time} earthIllumPct={readout ? 100 - readout.illumPct : null} />
       )}
 
@@ -503,9 +505,7 @@ export default function OrbitScene({ site }) {
           lit right now (100% = full moon, 0% = new moon).
         </p>
         <p className="orbit-hint">
-          The Moon&rsquo;s spin axis is tilted only ~1.5&deg;, so its poles sit almost
-          permanently near the day/night line &mdash; watch the <b>equator</b> (the thin
-          ring) to see real day and night sweep across it over about a month.
+          The thin white ring marks the equator while the white mark (point) is the chosen site.
         </p>
       </div>
       )}
