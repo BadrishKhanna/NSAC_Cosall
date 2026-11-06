@@ -55,15 +55,15 @@ TERRAIN_LAT_MAX = -80.0      # the LOLA product used covers 80S to the pole
 FLAT_AZ = np.arange(0.0, 360.0, 1.0)
 
 PRESETS = [
+    {"id": "connecting-ridge", "name": "Connecting Ridge (candidate site)",
+     "lat": -89.53432, "lon": -150.05233,
+     "note": "Candidate site in NASA's Connecting Ridge region, proposed in LPSC 2024 abstract 1695 (209.948 E)."},
     {"id": "apollo11", "name": "Apollo 11 (Tranquility Base)",
      "lat": 0.67408, "lon": 23.47297,
      "note": "Geometry only (outside the 80S terrain product). Coordinates: Davies and Colvin 2000."},
     {"id": "shackleton-ridge", "name": "Ridge near Shackleton (best cell from our scan)",
      "lat": -89.491, "lon": -138.674, "x_m": -10200.0, "y_m": -11600.0,
      "note": "Highest-lit cell in a 200 m zoom scan (2027, Sun upper edge, 2 m height)."},
-    {"id": "connecting-ridge", "name": "Connecting Ridge (candidate site)",
-     "lat": -89.53432, "lon": -150.05233,
-     "note": "Candidate site in NASA's Connecting Ridge region, proposed in LPSC 2024 abstract 1695 (209.948 E)."},
     {"id": "peak-near-shackleton", "name": "Peak Near Shackleton (candidate site)",
      "lat": -89.01701, "lon": 126.27302,
      "note": "Candidate site in NASA's Peak Near Shackleton region, proposed in LPSC 2024 abstract 1695."},
