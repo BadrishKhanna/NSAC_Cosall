@@ -1,6 +1,6 @@
 from datetime import datetime
 from functools import lru_cache
-
+from download_data import DATA, FILES
 import numpy as np
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -48,7 +48,9 @@ def _r(a, n=3):
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok"}
+    """Always answers 200 while the server is up; data_ready says whether the kernels and terrain are present."""
+    missing = [name for name, _, _ in FILES if not (DATA / name).exists()]
+    return {"status": "ok", "data_ready": not missing, "missing": missing}
 
 
 @app.get("/api/presets")
