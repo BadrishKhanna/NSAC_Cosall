@@ -55,6 +55,9 @@ doi:10.3847/PSJ/acf3e1. Data DOI: 10.60903/gsfcpgda-lola-spole
 - Terrain limited to sites south of 80S (edge of the LOLA 80S product)
 - Terrain: LOLA south-polar DEM (Barker et al. 2023, PGDA), 80 m/px, heights above the 1737.4 km sphere
 - LOLA products use the DE421 MOON_ME frame; our geometry uses the DE440 MOON_ME. Difference not yet quantified (expected small).
+- Horizon mask: rays every 1 deg azimuth, sampled every 80 m out to 100 km on the 80 m LOLA DEM, bilinear interpolation, exact spherical curvature, observer at surface (height 0). Terrain beyond 100 km ignored.
+- Projected meters treated as true meters, straight rays in the projected plane (scale error not yet checked against the DEM's CRS)
+- Sun and Earth treated as points against the horizon (disk sizes ignored)
 
 ## Validation log
 - Apollo 11 (0.674 N, 23.473 E, 1969-07-20 20:17:40 UTC; coordinates not yet
@@ -70,6 +73,7 @@ doi:10.3847/PSJ/acf3e1. Data DOI: 10.60903/gsfcpgda-lola-spole
 - Planned: Chandrayaan-3 (about 69.4 S, 2023-08-23), sunrise/sunset timing.
   Verify site coordinates and landing time from a primary source first. The site is
   outside the 80S terrain product, so this is a geometry-only check.
+- horizon_profile on synthetic terrain (independent spherical construction): mesa bearings recovered within 0.5 deg at four sites, elevation angles within ~0.3 deg of analytic values. Not yet compared against published illumination maps.
 
 ## Open questions
 - Event date and submission deadline
