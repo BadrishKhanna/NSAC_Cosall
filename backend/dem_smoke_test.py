@@ -9,6 +9,8 @@ from rasterio.windows import from_bounds
 DEM = Path(__file__).resolve().parent / "data" / "LDEM_80S_80MPP_ADJ.TIF"
 MOON_R = 1737400.0  # m, reference sphere of the LOLA products
 
+FIGURES = Path(__file__).resolve().parents[1] / "docs" / "figures"
+FIGURES.mkdir(parents=True, exist_ok=True)
 with rasterio.open(DEM) as ds:
     print("size (px):", ds.width, "x", ds.height)
     print("pixel size (m):", ds.res)
@@ -43,5 +45,5 @@ plt.colorbar(label="height above 1737.4 km sphere (m)")
 plt.xlabel("x (km)")
 plt.ylabel("y (km)")
 plt.title("LOLA 80 m DEM around the south pole")
-plt.savefig(Path(__file__).resolve().parent / "pole_dem.png", dpi=120)
+plt.savefig(FIGURES / "pole_dem.png", dpi=120)
 plt.show()
