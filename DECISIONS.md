@@ -86,6 +86,15 @@ Earth above flat horizon  45.6 %   above terrain horizon  64.8 %
 Both above terrain horizon:  23.6 %
 Longest Sun-dark stretch:     21.4 days
 Longest Earth-gap stretch:    10.1 days , Not very good.
+- - Zoom scan at the best cell (200 m grid, 4 km box, 2027, 80 m DEM, terrain within 30 km):
+  Sun center, ground level:        72.4 % at x -10.2, y -11.6 km (lat -89.491, lon -138.67)
+  + Sun upper edge (0.27 deg):     77.2 %
+  + observer height 2 m:           87.9 %
+  Same top cell in all three runs. Published average illumination for persistently
+  lit polar regions: 77-88 % (20-year hourly simulations, different DEM, assumptions
+  not checked). Verdict: consistent under stated assumptions; absolute percentages
+  depend on Sun-disk and height assumptions by ~15 points, so the tool exposes both.
+- Best cell is ~1.8 km from the published 89.44 S, 218.2 E point.
 
 ## Open questions
 - Event date and submission deadline
