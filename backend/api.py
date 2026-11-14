@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
 from horizon import horizon_profile, site_from_xy
+from lunar_geometry import load_kernels
+import spiceypy as spice
 from metrics import site_metrics
 
 app = FastAPI(title="Lunar site planner API",
@@ -57,6 +59,34 @@ def health():
 def presets():
     return PRESETS
 
+@app.get("/api/system")
+def system(time: str = Query(..., description="UTC time, e.g. 2027-06-15T12:00:00")):
+    """Real Sun/Earth/Moon geometry for one instant, for the 3D orbit scene.
+    Returns Earth->Moon, Earth->Sun and Moon->Sun vectors (km, J2000 inertial frame),
+    plus the J2000-to-body-fixed rotation matrices for the Moon (MOON_ME) and Earth
+    (IAU_EARTH). To orient a mesh authored in body-fixed axes for rendering in the
+    J2000 scene, apply the TRANSPOSE of the given matrix (body-fixed -> J2000)."""
+    try:
+        t = datetime.strptime(time, "%Y-%m-%dT%H:%M:%S")
+    except ValueError:
+        raise HTTPException(400, "time must look like 2027-06-15T12:00:00")
+    if not (MIN_DATE <= t <= MAX_DATE):
+        raise HTTPException(400, "time must be between 1960-01-01 and 2050-12-31")
+    load_kernels()
+    et = spice.str2et(t.strftime("%Y-%m-%d %H:%M:%S") + " UTC")
+    moon_e, _ = spice.spkpos("MOON", et, "J2000", "NONE", "EARTH")
+    sun_e, _ = spice.spkpos("SUN", et, "J2000", "NONE", "EARTH")
+    sun_m, _ = spice.spkpos("SUN", et, "J2000", "NONE", "MOON")
+    moon_rot = np.asarray(spice.pxform("J2000", "MOON_ME", et))
+    earth_rot = np.asarray(spice.pxform("J2000", "IAU_EARTH", et))
+    return {
+        "time": time,
+        "moon_from_earth_km": _r(moon_e, 1),
+        "sun_from_earth_km": _r(sun_e, 1),
+        "sun_from_moon_km": _r(sun_m, 1),
+        "moon_rotation": [_r(row, 6) for row in moon_rot],
+        "earth_rotation": [_r(row, 6) for row in earth_rot],
+    }
 
 @app.get("/api/site")
 def site(lat: float | None = Query(None, ge=-90, le=90),

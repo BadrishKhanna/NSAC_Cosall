@@ -21,6 +21,21 @@ function fmtDays(v) {
   return `${v.toFixed(2)} days`;
 }
 
+function SnapshotChip({ kind, up, elevation, label, upText, downText }) {
+  const sign = elevation >= 0 ? "+" : "\u2212";
+  return (
+    <div className={`chip chip-${kind} ${up ? "chip-up" : "chip-down"}`}>
+      <span className="chip-dot" />
+      <span>
+        <b>{label}</b> {up ? "up" : "down"}
+        <span className="chip-el"> ({sign}{Math.abs(elevation).toFixed(1)}\u00b0)</span>
+        {" \u2014 "}
+        {up ? upText : downText}
+      </span>
+    </div>
+  );
+}
+
 export default function SiteWorkspace({ presets }) {
   const [presetId, setPresetId] = useState(presets[0]?.id ?? CUSTOM);
   const [customLat, setCustomLat] = useState("-89.49");
@@ -164,6 +179,32 @@ export default function SiteWorkspace({ presets }) {
               <p className="badge-flat">
                 No terrain data at this site (north of 80{"\u00b0"}S). Horizon assumed flat.
               </p>
+            )}
+
+            {result.series && (
+              <div className="snapshot">
+                <p className="snapshot-label">
+                  On {result.assumptions.start}, 00:00 UTC
+                </p>
+                <div className="snapshot-chips">
+                  <SnapshotChip
+                    kind="sun"
+                    up={!!result.series.sun_up[0]}
+                    elevation={result.series.sun_el[0]}
+                    label="Sun"
+                    upText="power available"
+                    downText="no direct sunlight"
+                  />
+                  <SnapshotChip
+                    kind="earth"
+                    up={!!result.series.earth_up[0]}
+                    elevation={result.series.earth_el[0]}
+                    label="Earth"
+                    upText="direct-to-Earth link possible"
+                    downText="no direct-to-Earth link"
+                  />
+                </div>
+              </div>
             )}
 
             <HorizonChart

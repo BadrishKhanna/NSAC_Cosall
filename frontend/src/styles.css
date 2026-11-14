@@ -457,3 +457,137 @@ aside .cap {
     gap: 16px 20px;
   }
 }
+
+/* Snapshot chips (point-in-time Sun/Earth status) --------------------- */
+.snapshot {
+  margin-top: 22px;
+}
+.snapshot-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+.snapshot-chips {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  font-size: 14px;
+}
+.chip-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+.chip-sun.chip-up .chip-dot {
+  background: var(--sun);
+}
+.chip-earth.chip-up .chip-dot {
+  background: var(--earth);
+}
+.chip-down .chip-dot {
+  background: var(--muted);
+}
+.chip-el {
+  color: var(--muted);
+}
+
+/* Orbit scene (step 3) -------------------------------------------------- */
+.orbit-section {
+  margin-top: 56px;
+}
+.orbit-wrap {
+  border-radius: 2px;
+  overflow: hidden;
+  background: #000;
+  position: relative;
+}
+.orbit-canvas {
+  width: 100%;
+  height: 460px;
+  touch-action: none;
+}
+.orbit-error {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  right: 14px;
+  margin: 0;
+  background: rgba(20, 23, 26, 0.85);
+  padding: 8px 12px;
+  border-radius: 2px;
+}
+.orbit-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+}
+.orbit-controls select,
+.orbit-controls input[type="datetime-local"] {
+  font: 500 14px/1.3 "Archivo", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 8px 10px;
+}
+.btn {
+  font: 500 14px/1.3 "Archivo", system-ui, sans-serif;
+  color: var(--sheet);
+  background: var(--ink);
+  border: none;
+  border-radius: 2px;
+  padding: 9px 16px;
+  cursor: pointer;
+}
+.scale-toggle {
+  display: flex;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.scale-toggle button {
+  font: 500 13px/1.3 "Archivo", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--sheet);
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.scale-toggle button.active {
+  background: var(--ink);
+  color: var(--sheet);
+}
+.orbit-readout {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+@media (max-width: 900px) {
+  .orbit-canvas {
+    height: 320px;
+  }
+  .orbit-controls {
+    gap: 10px;
+  }
+}
+
+.orbit-loading {
+  height: 460px;
+}
+@media (max-width: 900px) {
+  .orbit-loading {
+    height: 320px;
+  }
+}
