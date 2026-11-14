@@ -1,4 +1,5 @@
 from pathlib import Path
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -6,9 +7,10 @@ import numpy as np
 from horizon import above_horizon, horizon_profile, site_from_xy
 from lunar_geometry import sun_earth_series
 
-# Test site: a point on the ridge next to Shackleton, picked from the DEM image
-# (x = -10 km, y = -10 km in the DEM's polar stereographic coordinates).
-LAT_DEG, LON_DEG = site_from_xy(-10_000.0, -10_000.0)
+# Site in the DEM's polar stereographic meters. Default: a ridge point picked by eye.
+# Usage: python backend/site_demo.py [x_m y_m]
+X_M, Y_M = (float(sys.argv[1]), float(sys.argv[2])) if len(sys.argv) == 3 else (-10_000.0, -10_000.0)
+LAT_DEG, LON_DEG = site_from_xy(X_M, Y_M)
 START_UTC = "2027-01-01 00:00:00 UTC"
 DAYS = 365
 STEP_H = 1.0
