@@ -65,10 +65,13 @@ doi:10.3847/PSJ/acf3e1. Data DOI: 10.60903/gsfcpgda-lola-spole
 - Illumination scan: 1 km grid, terrain within 30 km, 2 deg azimuth steps, hourly for one year (2027). Coarser than the per-site demo. Sun-limb offset is a parameter (default 0, point Sun).
 
 ## Validation log
-- Apollo 11 (0.674 N, 23.473 E, 1969-07-20 20:17:40 UTC; coordinates not yet
-  verified against a primary source)
-  computed Sun elevation 10.70 deg, Earth elevation 59.22 deg
-  published Sun elevation <find source>, difference <fill in>
+- Apollo 11 touchdown (1969-07-20 20:17:40 UTC, 0.674 N, 23.473 E): computed Sun 10.70 deg,
+  Earth 59.22 deg. Published (Apollo Lunar Surface Journal, Scotti, nominal site
+  0.6875 N, 23.4333 E, 20:17:39 UTC): Sun 10.65, Earth 59.43 (printed "59:43", verify).
+  Planned Sun elevation 10.8 (SP-4029). Sun differs 0.05 deg, Earth 0.21 deg; source's own
+  independent calculations differ by up to 0.5 deg. Four-event comparison pending.
+- Best-cell site demo (x -10200, y -11600 m; limb 0.27, height 2 m, 2027): Sun 87.3 %,
+  longest dark 8.5 d; Earth 55.5 %, longest comms gap 12.2 d; both 48.4 %.
 - South-pole baseline (-89.5, 0.0, 2027-01-01 for 365 days, hourly, no terrain,
   Sun center only): Sun above horizon 52.2 %, Earth 49.5 %, both 25.7 %.
   Sun elevation range -2.02 to 2.02 deg, Earth -6.60 to 7.07 deg.
