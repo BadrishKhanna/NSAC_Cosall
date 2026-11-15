@@ -1,0 +1,65 @@
+/* Orbit view, "From the site" mode. Loaded only with SiteSkyView. */
+
+.sky-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #020306;
+  cursor: grab;
+  touch-action: none;
+  outline: none;
+}
+.sky-wrap:active { cursor: grabbing; }
+.sky-wrap:focus-visible { outline: 2px solid rgba(233, 231, 226, 0.6); outline-offset: -4px; }
+.sky-canvas { position: absolute; inset: 0; display: block; }
+
+.sky-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  color: #b9bfc5;
+  font-size: 14px;
+  text-align: center;
+  padding: 0 24px;
+}
+.sky-message.error-line { color: #e07a6a; }
+.sky-updating {
+  position: absolute;
+  top: 76px;
+  left: 16px;
+  margin: 0;
+  font-size: 12px;
+  color: #b9bfc5;
+}
+
+.orbit-overlay.sky-controls {
+  bottom: 16px;
+  left: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.sky-controls .btn { background: #e9e7e2; color: #14171a; }
+.sky-controls .scale-toggle { border-color: rgba(185, 191, 197, 0.3); }
+.sky-controls .scale-toggle button { background: transparent; color: #e9e7e2; }
+.sky-controls .scale-toggle button.active { background: #e9e7e2; color: #14171a; }
+
+/* the Space view / From the site switch, in the top bar of controls */
+.orbit-overlay-tl .mode-toggle { border-color: rgba(185, 191, 197, 0.3); }
+.orbit-overlay-tl .mode-toggle button { background: transparent; color: #e9e7e2; }
+.orbit-overlay-tl .mode-toggle button.active { background: #e9e7e2; color: #14171a; }
+.orbit-overlay-tl .mode-toggle button:disabled { opacity: 0.4; cursor: default; }
+
+@media (max-width: 700px) {
+  .orbit-overlay.sky-panel {
+    left: 16px;
+    right: 16px;
+    bottom: 112px;
+    max-width: none;
+  }
+  .sky-panel .orbit-hint { display: none; }
+  .orbit-overlay.sky-controls { right: 16px; bottom: 12px; }
+}
