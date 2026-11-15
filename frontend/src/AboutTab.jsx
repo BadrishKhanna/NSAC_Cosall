@@ -133,6 +133,10 @@ const CREDITS = [
     what: "Software",
     who: "FastAPI, SpiceyPy, rasterio and pyproj on the server; React and Three.js in the browser",
   },
+  {
+    what: "Music",
+    who: "Rising Dawn by Ethereal 88, licensed CC BY 4.0, via free stock music",
+  },
 ];
 
 const LIMITS = [
