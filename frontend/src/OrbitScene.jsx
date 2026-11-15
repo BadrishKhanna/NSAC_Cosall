@@ -87,6 +87,7 @@ export default function OrbitScene({ site }) {
   const [system, setSystem] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [siteStatus, setSiteStatus] = useState(null);
+  const [siteError, setSiteError] = useState(false);
 
   // --- Three.js setup: runs once ---------------------------------------
   useEffect(() => {
@@ -339,10 +340,52 @@ export default function OrbitScene({ site }) {
   // than approximating locally, since only the backend knows the site's terrain horizon.
   // Throttled to once per simulated hour of change (not once per 500ms tick), since the
   // underlying hourly data cannot change faster than that anyway.
+  //
+  // One request at a time: while one is running, only the newest wanted time is remembered,
+  // and it is fetched as soon as the current one finishes. (Dropping every answer that is
+  // no longer the newest, as this used to, meant fast playback never showed any result.)
+  // The last good answer stays on screen while the next one loads, and a failure says so
+  // instead of showing "Loading" forever.
   const lastKeyRef = useRef("");
+  const wantedRef = useRef(null);
+  const busyRef = useRef(false);
+
+  const drainSiteStatus = useCallback(async () => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    try {
+      while (wantedRef.current) {
+        const w = wantedRef.current;
+        wantedRef.current = null;
+        try {
+          const path = siteQuery({
+            lat: w.lat, lon: w.lon, start: w.dateStr, days: 1, step_hours: 1,
+            sun_limb_deg: 0.27, observer_height_m: 2, include_series: true,
+          });
+          const data = await getJSON(path, { timeoutMs: 15000 });
+          const i = Math.min(w.hour, data.series.sun_el.length - 1);
+          setSiteStatus({
+            sunUp: !!data.series.sun_up[i],
+            sunEl: data.series.sun_el[i],
+            earthUp: !!data.series.earth_up[i],
+            earthEl: data.series.earth_el[i],
+            terrain: data.site.terrain,
+          });
+          setSiteError(false);
+        } catch {
+          setSiteError(true);
+        }
+      }
+    } finally {
+      busyRef.current = false;
+    }
+  }, []);
+
   useEffect(() => {
     if (!site) {
+      wantedRef.current = null;
       setSiteStatus(null);
+      setSiteError(false);
       return;
     }
     const dateStr = time.toISOString().slice(0, 10);
@@ -350,32 +393,9 @@ export default function OrbitScene({ site }) {
     const key = `${site.lat.toFixed(4)},${site.lon.toFixed(4)},${dateStr},${hour}`;
     if (key === lastKeyRef.current) return;
     lastKeyRef.current = key;
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const path = siteQuery({
-          lat: site.lat, lon: site.lon, start: dateStr, days: 1, step_hours: 1,
-          sun_limb_deg: 0.27, observer_height_m: 2, include_series: true,
-        });
-        const data = await getJSON(path, { timeoutMs: 15000 });
-        if (cancelled || key !== lastKeyRef.current) return;
-        const i = Math.min(hour, data.series.sun_el.length - 1);
-        setSiteStatus({
-          sunUp: !!data.series.sun_up[i],
-          sunEl: data.series.sun_el[i],
-          earthUp: !!data.series.earth_up[i],
-          earthEl: data.series.earth_el[i],
-          terrain: data.site.terrain,
-        });
-      } catch {
-        if (!cancelled) setSiteStatus(null);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [site, time]);
+    wantedRef.current = { lat: site.lat, lon: site.lon, dateStr, hour };
+    drainSiteStatus();
+  }, [site, time, drainSiteStatus]);
 
   const readout = system ? moonReadout(system) : null;
 
@@ -465,6 +485,8 @@ export default function OrbitScene({ site }) {
                 upText="direct-to-Earth link possible" downText="no direct-to-Earth link"
               />
             </>
+          ) : siteError ? (
+            <p className="note-line error-line">Could not load the site status. Is the backend running?</p>
           ) : (
             <p className="note-line">Loading&hellip;</p>
           )}
