@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getJSON, siteQuery } from "./api.js";
 import HorizonChart from "./HorizonChart.jsx";
 import VisibilityRibbon from "./VisibilityRibbon.jsx";
@@ -10,7 +10,6 @@ import { parseDateParam, parseNumberParam, patchParams, readHash, selectionPatch
 
 const DAYS = 365;
 const STEP_HOURS = 1;
-const DEBOUNCE_MS = 500;
 
 function formatCoords(lat, lon) {
   const la = `${Math.abs(lat).toFixed(3)}\u00b0 ${lat < 0 ? "S" : "N"}`;
@@ -43,8 +42,12 @@ export default function SiteWorkspace({ presets, selection, onSelectionChange, o
   const [heightM, setHeightM] = useState(() => parseNumberParam(linkParams.get("h"), 0, 50, 2));
 
   const [result, setResult] = useState(null);
-  const [phase, setPhase] = useState("idle"); // idle | loading | ready | error
+  // Nothing is computed until the visitor presses "Show results" (or opens a shared link
+  // that was saved after a run, which has run=1 in it).
+  const [phase, setPhase] = useState(() => (linkParams.get("run") === "1" ? "loading" : "idle")); // idle | loading | ready | error
   const [errorMsg, setErrorMsg] = useState("");
+  const [ran, setRan] = useState(null); // the settings the shown result was computed for
+  const [cmpBusy, setCmpBusy] = useState(false); // the Compare section is computing
 
   const preset = presets.find((p) => p.id === presetId);
   const site = useMemo(() => {
@@ -55,6 +58,11 @@ export default function SiteWorkspace({ presets, selection, onSelectionChange, o
     return { lat, lon, name: "Custom coordinates", note: null };
   }, [preset, customLat, customLon]);
 
+  // A one-line fingerprint of the settings, to tell whether the shown result is still current.
+  const sig = site ? [site.lat, site.lon, start, sunEdge, heightM].join("|") : null;
+  const runId = useRef(0);
+  const stale = result !== null && ran !== sig;
+
   // Keep the address bar in step with the settings, so "Copy link" (or the browser's own
   // copy) always gives a link to exactly this view. (The Compare section adds its own
   // three sites to the same link.)
@@ -64,56 +72,59 @@ export default function SiteWorkspace({ presets, selection, onSelectionChange, o
       start,
       edge: sunEdge ? 1 : 0,
       h: heightM,
+      run: ran !== null && ran === sig ? 1 : null, // a link opened later re-runs only a finished view
     });
-  }, [presetId, customLat, customLon, start, sunEdge, heightM]);
+  }, [presetId, customLat, customLon, start, sunEdge, heightM, ran, sig]);
 
   // Report the chosen site up to the parent, so the Orbit tab can mark it on the Moon.
   useEffect(() => {
     onSiteChange?.(site);
   }, [site, onSiteChange]);
 
-  useEffect(() => {
+  async function runSite() {
     if (!site) {
       setPhase("error");
       setErrorMsg("Enter a latitude and longitude to see results.");
       return;
     }
-    let cancelled = false;
+    const id = ++runId.current;
+    const mySig = sig;
     setPhase("loading");
-    const timer = setTimeout(async () => {
-      try {
-        const path = siteQuery({
-          lat: site.lat,
-          lon: site.lon,
-          start,
-          days: DAYS,
-          step_hours: STEP_HOURS,
-          sun_limb_deg: sunEdge ? 0.27 : 0,
-          observer_height_m: heightM,
-          include_series: true,
-        });
-        const data = await getJSON(path, { timeoutMs: 30000 });
-        if (cancelled) return;
-        setResult(data);
-        setPhase("ready");
-      } catch (err) {
-        if (cancelled) return;
-        setErrorMsg(err.message || "The request failed.");
-        setPhase("error");
-      }
-    }, DEBOUNCE_MS);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
+    setErrorMsg("");
+    try {
+      const path = siteQuery({
+        lat: site.lat,
+        lon: site.lon,
+        start,
+        days: DAYS,
+        step_hours: STEP_HOURS,
+        sun_limb_deg: sunEdge ? 0.27 : 0,
+        observer_height_m: heightM,
+        include_series: true,
+      });
+      const data = await getJSON(path, { timeoutMs: 30000 });
+      if (id !== runId.current) return;
+      setResult(data);
+      setRan(mySig);
+      setPhase("ready");
+    } catch (err) {
+      if (id !== runId.current) return;
+      setErrorMsg(err.message || "The request failed.");
+      setPhase("error");
+    }
+  }
+
+  // A shared link saved after a run opens with its results already computed.
+  useEffect(() => {
+    if (linkParams.get("run") === "1") runSite();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [site?.lat, site?.lon, start, sunEdge, heightM]);
+  }, []);
 
   return (
     <section className="workspace" aria-labelledby="ws-h">
       <div className="section-head">
         <h2 id="ws-h">Choose a site and a date</h2>
-        <p>Every number below is computed for this exact site and period when you load the page.</p>
+        <p>Choose a site and a date, then press Show results. Every number below is computed for that exact site and period.</p>
       </div>
 
       <div className="controls">
@@ -149,14 +160,21 @@ export default function SiteWorkspace({ presets, selection, onSelectionChange, o
           <span>Count the Sun&rsquo;s upper edge, not just its center</span>
         </label>
 
+        <button type="button" className="btn" onClick={runSite} disabled={!site || phase === "loading" || cmpBusy}>
+          {phase === "loading" ? "Computing\u2026" : stale ? "Update results" : "Show results"}
+        </button>
         <CopyLinkButton />
       </div>
 
+      {phase === "idle" && !result && <p className="note-line">Press Show results to compute this site.</p>}
+      {stale && phase !== "loading" && (
+        <p className="note-line">The settings changed since these results. Press Update results to refresh them.</p>
+      )}
       {phase === "loading" && !result && <p className="note-line">Computing geometry and terrain for this site…</p>}
       {phase === "error" && <p className="note-line error-line">{errorMsg}</p>}
 
       {result && (
-        <article className={`sheet ${phase === "loading" ? "sheet-stale" : ""}`}>
+        <article className={`sheet ${phase === "loading" || stale ? "sheet-stale" : ""}`}>
           <div>
             <h2>{site?.name}</h2>
             <p className="site-meta">
@@ -291,6 +309,7 @@ export default function SiteWorkspace({ presets, selection, onSelectionChange, o
         heightM={heightM}
         days={DAYS}
         hold={phase === "loading"}
+        onBusyChange={setCmpBusy}
       />
     </section>
   );
