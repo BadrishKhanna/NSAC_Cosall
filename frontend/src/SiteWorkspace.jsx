@@ -5,6 +5,8 @@ import VisibilityRibbon from "./VisibilityRibbon.jsx";
 import SnapshotChip from "./SnapshotChip.jsx";
 import SitePicker, { CUSTOM } from "./SitePicker.jsx";
 import CompareSites from "./CompareSites.jsx";
+import CopyLinkButton from "./CopyLinkButton.jsx";
+import { parseDateParam, parseNumberParam, patchParams, readHash, selectionPatch } from "./urlState.js";
 
 const DAYS = 365;
 const STEP_HOURS = 1;
@@ -33,10 +35,12 @@ export default function SiteWorkspace({ presets, selection, onSelectionChange, o
   const setPresetId = (id) => onSelectionChange({ ...selection, presetId: id });
   const setCustomLat = (v) => onSelectionChange({ ...selection, customLat: v });
   const setCustomLon = (v) => onSelectionChange({ ...selection, customLon: v });
-  const [start, setStart] = useState("2027-01-01");
-  const [sunEdge, setSunEdge] = useState(true); // true: Sun's upper edge counts; false: center only
-  const [heightM, setHeightM] = useState(2);
 
+  // Starting values come from the link (#planner?start=...&edge=...&h=...), if it has them.
+  const [linkParams] = useState(() => readHash().params);
+  const [start, setStart] = useState(() => parseDateParam(linkParams.get("start"), "2027-01-01"));
+  const [sunEdge, setSunEdge] = useState(() => linkParams.get("edge") !== "0"); // true: Sun's upper edge counts; false: center only
+  const [heightM, setHeightM] = useState(() => parseNumberParam(linkParams.get("h"), 0, 50, 2));
 
   const [result, setResult] = useState(null);
   const [phase, setPhase] = useState("idle"); // idle | loading | ready | error
@@ -50,6 +54,18 @@ export default function SiteWorkspace({ presets, selection, onSelectionChange, o
     if (Number.isNaN(lat) || Number.isNaN(lon)) return null;
     return { lat, lon, name: "Custom coordinates", note: null };
   }, [preset, customLat, customLon]);
+
+  // Keep the address bar in step with the settings, so "Copy link" (or the browser's own
+  // copy) always gives a link to exactly this view. (The Compare section adds its own
+  // three sites to the same link.)
+  useEffect(() => {
+    patchParams("planner", {
+      ...selectionPatch(presetId, customLat, customLon),
+      start,
+      edge: sunEdge ? 1 : 0,
+      h: heightM,
+    });
+  }, [presetId, customLat, customLon, start, sunEdge, heightM]);
 
   // Report the chosen site up to the parent, so the Orbit tab can mark it on the Moon.
   useEffect(() => {
@@ -132,6 +148,8 @@ export default function SiteWorkspace({ presets, selection, onSelectionChange, o
           <input type="checkbox" checked={sunEdge} onChange={(e) => setSunEdge(e.target.checked)} />
           <span>Count the Sun&rsquo;s upper edge, not just its center</span>
         </label>
+
+        <CopyLinkButton />
       </div>
 
       {phase === "loading" && !result && <p className="note-line">Computing geometry and terrain for this site…</p>}
@@ -265,6 +283,7 @@ export default function SiteWorkspace({ presets, selection, onSelectionChange, o
           </aside>
         </article>
       )}
+
       <CompareSites
         presets={presets}
         start={start}

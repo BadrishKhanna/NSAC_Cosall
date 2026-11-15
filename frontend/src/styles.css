@@ -1129,9 +1129,10 @@ table.metrics td.cmp-best {
   width: 100%;
   aspect-ratio: 21 / 9;
   object-fit: cover;
+  object-position: center 55%;
   background: var(--sheet);
   border: 1px solid var(--rule);
-  border-radius: 2px;
+  border-radius: 16px;
 }
 
 /* Each section: short heading on the left, content on the right */
@@ -1288,4 +1289,15 @@ table.about-table tbody th {
   .about-credits {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+
+/* Copy link button (Site planner and Launch planner) ----------------------- */
+.btn.btn-quiet {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--rule);
+}
+.btn.btn-quiet:hover {
+  border-color: var(--ink);
 }
