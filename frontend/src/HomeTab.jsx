@@ -76,7 +76,7 @@ export default function HomeTab({ go }) {
           <p className="body-text">
             It is a geometric model, not a power or thermal simulation. It treats Earth as a
             point, ignores antenna patterns and dust, and has terrain data only south of
-            80&deg;S. Use it as a fast, honest first pass for comparing places and dates, not as
+            60&deg;S. Use it as a fast, honest first pass for comparing places and dates, not as
             a mission design.
           </p>
         </section>
