@@ -13,3 +13,9 @@ SI Usage :
 3. Data Analysis and interpretation.
 
 Cosall is the original work of our team, built with NASA SPICE and LOLA data and open-source libraries credited in the project, with AI tools used to assist the code, text and artwork, and we have the rights to submit everything in it.
+
+To know more : 
+1. [Presentation](https://canva.link/9t63p5ftb4fvjeu)
+2. [About Us](https://www.spaceappschallenge.org/2026/find-a-team/phycon/?tab=project)
+
+
