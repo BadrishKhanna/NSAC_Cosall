@@ -667,6 +667,27 @@ aside .cap {
   font-weight: 500;
   font-size: 14px;
 }
+.orbit-overlay-br {
+  bottom: 16px;
+  right: 16px;
+  max-width: 300px;
+}
+.orbit-overlay-br h3 {
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+.orbit-overlay-br .chip {
+  border-color: rgba(185, 191, 197, 0.3);
+  margin-top: 8px;
+  font-size: 13px;
+}
+.orbit-overlay-br .chip:first-of-type {
+  margin-top: 0;
+}
+.orbit-overlay-br .chip-el {
+  color: #b9bfc5;
+}
+
 .orbit-hint {
   color: #b9bfc5;
   font-size: 12px;

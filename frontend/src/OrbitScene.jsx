@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { getJSON } from "./api.js";
+import { getJSON, siteQuery } from "./api.js";
+import SnapshotChip from "./SnapshotChip.jsx";
 
 // One scene unit = this many real kilometers. Chosen so the Earth (radius 6371 km)
 // renders at a comfortable size; the true Earth-Moon distance then falls out of the
@@ -64,7 +65,18 @@ function moonReadout(system) {
   return { illumPct, distanceKm: na, subEarthLat: lat, subEarthLon: lon };
 }
 
-export default function OrbitScene() {
+// A point on the Moon's body-fixed sphere from lat/lon, in the same convention used
+// throughout the backend (x = cos(lat)cos(lon), y = cos(lat)sin(lon), z = sin(lat)).
+// Verified as an exact inverse of the sub-Earth-point calculation above.
+function bodyFixedPoint(latDeg, lonDeg, radius) {
+  const lat = THREE.MathUtils.degToRad(latDeg);
+  const lon = THREE.MathUtils.degToRad(lonDeg);
+  return new THREE.Vector3(Math.cos(lat) * Math.cos(lon), Math.cos(lat) * Math.sin(lon), Math.sin(lat)).multiplyScalar(
+    radius,
+  );
+}
+
+export default function OrbitScene({ site }) {
   const mountRef = useRef(null);
   const stateRef = useRef({}); // holds everything the animation loop needs, so effects don't re-run per frame
 
@@ -74,6 +86,7 @@ export default function OrbitScene() {
   const [trueScale, setTrueScale] = useState(false);
   const [system, setSystem] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [siteStatus, setSiteStatus] = useState(null);
 
   // --- Three.js setup: runs once ---------------------------------------
   useEffect(() => {
@@ -122,7 +135,7 @@ export default function OrbitScene() {
 
     // Textures are loaded asynchronously and swapped in when ready; a solid color shows
     // immediately and stays if the texture file is missing (checked, doesn't reject the
-    // load -- it falls back cleanly via onError below).
+    // load -- it falls back cleanly via the error callback below).
     const loader = new THREE.TextureLoader();
     const earthMat = new THREE.MeshStandardMaterial({ color: 0x1f6a99, roughness: 0.85 });
     const moonMat = new THREE.MeshStandardMaterial({ color: 0xa3a9ae, roughness: 0.95 });
@@ -144,6 +157,39 @@ export default function OrbitScene() {
 
     const moon = new THREE.Mesh(new THREE.SphereGeometry(MOON_R, 40, 40), moonMat);
     scene.add(moon);
+
+    // A faint equator ring on the Moon, purely a visual reference: the Moon's spin axis
+    // is tilted only ~1.5 degrees, so its poles sit almost permanently near the day/night
+    // line while the equator visibly cycles light and dark over about a month. Without
+    // some reference it is easy to mistake that real effect for the picture "not updating".
+    const equatorPts = [];
+    for (let i = 0; i <= 128; i++) {
+      const a = (i / 128) * Math.PI * 2;
+      equatorPts.push(new THREE.Vector3(Math.cos(a) * MOON_R * 1.002, Math.sin(a) * MOON_R * 1.002, 0));
+    }
+    const equator = new THREE.LineLoop(
+      new THREE.BufferGeometry().setFromPoints(equatorPts),
+      new THREE.LineBasicMaterial({ color: 0x565c61, transparent: true, opacity: 0.5 }),
+    );
+    moon.add(equator);
+
+    // The chosen landing site, marked on the Moon's surface. Parented to the moon mesh so
+    // it automatically inherits the Moon's real orientation (including libration) --
+    // its local position is the only thing this component ever needs to set.
+    const siteMarker = new THREE.Group();
+    const pin = new THREE.Mesh(
+      new THREE.SphereGeometry(MOON_R * 0.045, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0xffffff }),
+    );
+    const pinLine = new THREE.Mesh(
+      new THREE.CylinderGeometry(MOON_R * 0.008, MOON_R * 0.008, MOON_R * 0.14, 8),
+      new THREE.MeshBasicMaterial({ color: 0xffffff }),
+    );
+    pinLine.position.y = MOON_R * 0.07;
+    pin.position.y = MOON_R * 0.14;
+    siteMarker.add(pinLine, pin);
+    siteMarker.visible = false;
+    moon.add(siteMarker);
 
     const sunMarker = new THREE.Mesh(
       new THREE.SphereGeometry(0.9, 20, 20),
@@ -176,7 +222,10 @@ export default function OrbitScene() {
     const ro = new ResizeObserver(onResize);
     ro.observe(mount);
 
-    stateRef.current = { ...stateRef.current, scene, camera, renderer, controls, earth, moon, sunMarker, sunLight };
+    stateRef.current = {
+      ...stateRef.current,
+      scene, camera, renderer, controls, earth, moon, siteMarker, sunMarker, sunLight,
+    };
 
     return () => {
       disposed = true;
@@ -249,6 +298,25 @@ export default function OrbitScene() {
     );
   }, [system, trueScale]);
 
+  // --- Place the landing-site marker (a child of the Moon mesh, so it automatically
+  // inherits the Moon's real orientation without any extra math here) -----------------
+  useEffect(() => {
+    const st = stateRef.current;
+    if (!st.siteMarker) return;
+    if (!site) {
+      st.siteMarker.visible = false;
+      return;
+    }
+    const p = bodyFixedPoint(site.lat, site.lon, MOON_R);
+    const outward = p.clone().normalize();
+    // Rotate the marker's local "up" (the cylinder's default long axis) to point along
+    // the outward surface normal -- both expressed in the Moon's own local space, since
+    // siteMarker is a child of the moon mesh, so this needs no world-frame conversion.
+    st.siteMarker.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), outward);
+    st.siteMarker.position.copy(p);
+    st.siteMarker.visible = true;
+  }, [site]);
+
   // --- Advance the simulated clock while playing ------------------------
   useEffect(() => {
     if (!playing) return;
@@ -265,6 +333,49 @@ export default function OrbitScene() {
     }, 500);
     return () => clearInterval(id);
   }, [playing, speedIdx]);
+
+  // --- Live power/DTE status for the chosen site, at the current simulated time -------
+  // Reuses /api/site (the same terrain-aware calculation the Planner tab uses) rather
+  // than approximating locally, since only the backend knows the site's terrain horizon.
+  // Throttled to once per simulated hour of change (not once per 500ms tick), since the
+  // underlying hourly data cannot change faster than that anyway.
+  const lastKeyRef = useRef("");
+  useEffect(() => {
+    if (!site) {
+      setSiteStatus(null);
+      return;
+    }
+    const dateStr = time.toISOString().slice(0, 10);
+    const hour = time.getUTCHours();
+    const key = `${site.lat.toFixed(4)},${site.lon.toFixed(4)},${dateStr},${hour}`;
+    if (key === lastKeyRef.current) return;
+    lastKeyRef.current = key;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const path = siteQuery({
+          lat: site.lat, lon: site.lon, start: dateStr, days: 1, step_hours: 1,
+          sun_limb_deg: 0.27, observer_height_m: 2, include_series: true,
+        });
+        const data = await getJSON(path, { timeoutMs: 15000 });
+        if (cancelled || key !== lastKeyRef.current) return;
+        const i = Math.min(hour, data.series.sun_el.length - 1);
+        setSiteStatus({
+          sunUp: !!data.series.sun_up[i],
+          sunEl: data.series.sun_el[i],
+          earthUp: !!data.series.earth_up[i],
+          earthEl: data.series.earth_el[i],
+          terrain: data.site.terrain,
+        });
+      } catch {
+        if (!cancelled) setSiteStatus(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [site, time]);
 
   const readout = system ? moonReadout(system) : null;
 
@@ -329,11 +440,36 @@ export default function OrbitScene() {
           <p className="note-line">Loading&hellip;</p>
         )}
         <p className="orbit-hint">
-          Move the date or press Play &mdash; these numbers and the Moon&rsquo;s lit
-          side should change together. If the numbers move but the picture doesn&rsquo;t,
-          that is a bug; tell us.
+          &ldquo;Illuminated&rdquo; is how much of the Moon&rsquo;s Earth-facing side is
+          lit right now (100% = full moon, 0% = new moon).
+        </p>
+        <p className="orbit-hint">
+          The Moon&rsquo;s spin axis is tilted only ~1.5&deg;, so its poles sit almost
+          permanently near the day/night line &mdash; watch the <b>equator</b> (the thin
+          ring) to see real day and night sweep across it over about a month.
         </p>
       </div>
+
+      {site && (
+        <div className="orbit-overlay orbit-overlay-br">
+          <h3>{site.name}</h3>
+          {siteStatus ? (
+            <>
+              {!siteStatus.terrain && <p className="orbit-hint">No terrain data here; horizon assumed flat.</p>}
+              <SnapshotChip
+                kind="sun" up={siteStatus.sunUp} elevation={siteStatus.sunEl} label="Sun"
+                upText="power available" downText="no direct sunlight"
+              />
+              <SnapshotChip
+                kind="earth" up={siteStatus.earthUp} elevation={siteStatus.earthEl} label="Earth"
+                upText="direct-to-Earth link possible" downText="no direct-to-Earth link"
+              />
+            </>
+          ) : (
+            <p className="note-line">Loading&hellip;</p>
+          )}
+        </div>
+      )}
 
       {errorMsg && <p className="note-line error-line orbit-error">{errorMsg}</p>}
     </div>
