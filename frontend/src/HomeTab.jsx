@@ -12,7 +12,9 @@ export default function HomeTab({ go }) {
             in view, and the terrain in between. Built for mission planners, educators and the
             public who need a quick, honest answer without a specialist tool.
           </p>
+    
         </div>
+        <p className="hero-credit">All the artworks are made with SI-assistance</p>
       </header>
 
       <div className="home">
