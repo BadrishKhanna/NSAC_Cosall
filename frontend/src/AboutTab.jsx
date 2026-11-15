@@ -1,18 +1,21 @@
+import { HorizonHeroArt } from "./HeroArt.jsx";
+
 // About tab. The text lives in the arrays below, so editing the page means editing
 // words, not markup. Escapes like \u00b0 are safe here because they sit inside JS strings;
 // in JSX text, use entities instead (&deg;, &mdash;) -- see the note in DECISIONS.md.
 
 // Replace this image: either overwrite frontend/public/about-placeholder.svg, or drop a
 // photo into frontend/public/ and change the path (and the alt text) here.
-const ABOUT_IMAGE_URL = "/Cosall_globe_moon.png";
+const ABOUT_IMAGE_URL = "/about-placeholder.svg";
 const ABOUT_IMAGE_ALT = "Placeholder image: replace with a photo of the team or the project";
 
 // Replace with the real team. Add or remove lines freely. Optional: add
 // photo: "/team/name.jpg" (a file in frontend/public/team/) to show a photo instead of
 // initials.
 const TEAM = [
-  { name: "Badrish Khanna R R", role: "Lead" },
-  { name: "Sharan S B", role: "Lead 2" },
+  { name: "Team member 1", role: "Role" },
+  { name: "Team member 2", role: "Role" },
+  { name: "Team member 3", role: "Role" },
 ];
 
 function initialsOf(name) {
@@ -159,35 +162,6 @@ const LIMITS = [
   },
 ];
 
-// Hero artwork: the same picture the Site planner draws (a terrain ridge against black
-// sky, with the Sun and Earth as dots), so the About page looks like part of the tool.
-const RIDGE = [
-  [0, 170], [60, 160], [120, 168], [190, 140], [250, 150], [320, 120], [370, 132], [430, 150],
-  [500, 138], [560, 160], [620, 150], [690, 172], [760, 160], [830, 134], [890, 148], [950, 126],
-  [1000, 138],
-];
-const SUN_TRACK = Array.from({ length: 29 }, (_, i) => ({
-  x: 300 + i * 16,
-  y: 152 - 58 * Math.sin((Math.PI * i) / 28),
-}));
-const SUN_AT = 24;
-
-function SkyArt() {
-  const ridge = "M" + RIDGE.map(([x, y]) => `${x},${y}`).join(" L");
-  const sun = SUN_TRACK[SUN_AT];
-  return (
-    <svg className="about-sky" viewBox="0 0 1000 220" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-      {SUN_TRACK.map((p, i) =>
-        i === SUN_AT ? null : <circle key={i} cx={p.x} cy={p.y} r="2.4" className="hz-sun-dot about-sun-trail" />,
-      )}
-      <circle cx={sun.x} cy={sun.y} r="15" className="hz-sun-dot" />
-      <circle cx="330" cy="70" r="9" className="hz-earth-dot" />
-      <path d={`${ridge} L1000,220 L0,220 Z`} className="hz-land" />
-      <path d={ridge} className="hz-ridge" />
-    </svg>
-  );
-}
-
 function Row({ id, title, blurb, children }) {
   return (
     <section className="about-row" aria-labelledby={id}>
@@ -229,13 +203,13 @@ export default function AboutTab() {
   return (
     <div className="about">
       <header className="about-hero">
+        <HorizonHeroArt />
         <div className="about-hero-inner">
           <h1>Is the Sun up? Is Earth in view?</h1>
           <p className="lede">
             Cosall answers both for any lunar south-pole site and date, and shows its working.
           </p>
         </div>
-        <SkyArt />
       </header>
 
       <main className="page about-page">
