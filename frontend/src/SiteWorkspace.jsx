@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { getJSON, siteQuery } from "./api.js";
 import HorizonChart from "./HorizonChart.jsx";
-import YearRibbon from "./YearRibbon.jsx";
+import VisibilityRibbon from "./VisibilityRibbon.jsx";
 import SnapshotChip from "./SnapshotChip.jsx";
+import SitePicker, { CUSTOM } from "./SitePicker.jsx";
 
-const CUSTOM = "__custom__";
 const DAYS = 365;
 const STEP_HOURS = 1;
 const DEBOUNCE_MS = 500;
@@ -100,44 +100,15 @@ export default function SiteWorkspace({ presets, selection, onSelectionChange, o
       </div>
 
       <div className="controls">
-        <label className="field">
-          <span>Site</span>
-          <select value={presetId} onChange={(e) => setPresetId(e.target.value)}>
-            {presets.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-            <option value={CUSTOM}>Custom coordinates…</option>
-          </select>
-        </label>
-
-        {presetId === CUSTOM && (
-          <>
-            <label className="field field-narrow">
-              <span>Latitude</span>
-              <input
-                type="number"
-                step="0.001"
-                min="-90"
-                max="90"
-                value={customLat}
-                onChange={(e) => setCustomLat(e.target.value)}
-              />
-            </label>
-            <label className="field field-narrow">
-              <span>Longitude</span>
-              <input
-                type="number"
-                step="0.001"
-                min="-360"
-                max="360"
-                value={customLon}
-                onChange={(e) => setCustomLon(e.target.value)}
-              />
-            </label>
-          </>
-        )}
+        <SitePicker
+          presets={presets}
+          presetId={presetId}
+          customLat={customLat}
+          customLon={customLon}
+          onPresetId={setPresetId}
+          onCustomLat={setCustomLat}
+          onCustomLon={setCustomLon}
+        />
 
         <label className="field field-narrow">
           <span>Start date</span>
@@ -223,7 +194,7 @@ export default function SiteWorkspace({ presets, selection, onSelectionChange, o
               <b className="both">{fmtPct(result.metrics.both_pct)}</b> of the time.
             </p>
 
-            <YearRibbon series={result.series} stepHours={result.assumptions.step_hours} days={DAYS} />
+            <VisibilityRibbon series={result.series} stepHours={result.assumptions.step_hours} days={DAYS} />
 
             <table className="metrics">
               <tbody>

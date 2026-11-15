@@ -728,7 +728,7 @@ aside .cap {
 }
 .nav-cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 20px;
   margin-top: 48px;
 }
@@ -773,14 +773,182 @@ aside .cap {
   max-width: 40em;
   margin-top: 16px;
 }
-.coming-soon {
-  border: 1px dashed var(--rule);
-  border-radius: 2px;
-  padding: 20px 24px;
-}
 
 @media (max-width: 700px) {
   .nav-cards {
     grid-template-columns: 1fr;
   }
+}
+
+/* Windows timeline chart (Launch tab) ----------------------------------- */
+.wt-fig {
+  margin: 0;
+}
+.wt-window {
+  overflow-x: auto;
+  border-radius: 2px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+}
+.wt-window svg {
+  display: block;
+  width: 100%;
+  min-width: 680px;
+  height: auto;
+}
+.wt-fig figcaption {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 8px;
+  max-width: 60em;
+}
+.wt-key {
+  font-weight: 600;
+}
+.wt-key-sun {
+  color: var(--sun);
+}
+.wt-key-earth {
+  color: var(--earth);
+}
+.wt-key-both {
+  color: var(--both);
+}
+.wt-grid {
+  stroke: var(--rule);
+  stroke-width: 1;
+}
+.wt-axis {
+  fill: var(--muted);
+  font: 400 12px "Archivo", system-ui, sans-serif;
+}
+.wt-yearline {
+  stroke: var(--rule);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.wt-line {
+  fill: none;
+  stroke-width: 1.6;
+}
+.wt-line-sun {
+  stroke: var(--sun);
+  opacity: 0.85;
+}
+.wt-line-earth {
+  stroke: var(--earth);
+  opacity: 0.85;
+}
+.wt-line-both {
+  stroke: var(--both);
+  stroke-width: 2.2;
+}
+.wt-pickline {
+  stroke: var(--ink);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+  opacity: 0.4;
+}
+.wt-pickdot {
+  fill: var(--sheet);
+  stroke: var(--ink);
+  stroke-width: 1.6;
+}
+.wt-picknum {
+  font: 600 11px "Archivo", system-ui, sans-serif;
+  fill: var(--ink);
+}
+
+/* Launch tab -------------------------------------------------------------- */
+.launch-page {
+  max-width: 1100px;
+}
+.launch-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 28px;
+  align-items: end;
+  margin-bottom: 28px;
+}
+.launch-note {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 6px;
+  max-width: 46em;
+}
+.window-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+.window-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.window-card-num {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 20px;
+  color: var(--muted);
+}
+.window-card h3 {
+  font-size: 17px;
+}
+.window-card dl {
+  margin: 12px 0 0;
+  font-size: 13px;
+}
+.window-card dl div {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-top: 1px solid var(--rule);
+}
+.window-card dt {
+  color: var(--muted);
+}
+.window-card dd {
+  margin: 0;
+  font-weight: 500;
+}
+.launch-date-line {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--rule);
+  font-size: 13px;
+}
+.launch-date-line b {
+  display: block;
+  font-size: 15px;
+  margin-top: 2px;
+}
+
+.sheet-single {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 32px;
+  margin-top: 24px;
+}
+.tcap-spaced {
+  margin-top: 12px;
+}
+.window-card {
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 16px 18px;
+}
+.window-card-selected {
+  border-color: var(--ink);
+  border-width: 2px;
+  padding: 15px 17px;
+}
+.launch-outlook h2 {
+  margin-bottom: 8px;
 }

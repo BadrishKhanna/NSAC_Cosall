@@ -29,6 +29,16 @@ export default function HomeTab({ go }) {
           </p>
           <span className="nav-card-go">Open the planner &rarr;</span>
         </button>
+        <button type="button" className="nav-card" onClick={() => go("launch")}>
+          <span className="nav-card-eyebrow">Decide</span>
+          <h2>Launch planner</h2>
+          <p>
+            Scans five years of candidate landing dates for a site and recommends the best
+            windows, with a launch date worked back from a chosen Earth launch site and
+            transfer time, plus a three-year mission outlook for whichever you pick.
+          </p>
+          <span className="nav-card-go">Open the launch planner &rarr;</span>
+        </button>
       </section>
 
       <section aria-labelledby="about-h">
@@ -46,16 +56,6 @@ export default function HomeTab({ go }) {
           spacecraft antenna patterns, or the exact shape of a lander. Treat the numbers as a
           fast, honest first pass for comparing sites and dates &mdash; the kind of thing that
           used to take a specialist tool and a lot of patience.
-        </p>
-      </section>
-
-      <section aria-labelledby="soon-h" className="coming-soon">
-        <h2 id="soon-h">Coming next</h2>
-        <p className="body-text">
-          A launch-date suggester: given a landing site, it will scan candidate dates and
-          recommend windows that balance sunlight, direct-to-Earth communication and a
-          reasonable transit time from Earth. Not built yet &mdash; the site planner above
-          already computes everything it needs, so this is next in line.
         </p>
       </section>
 

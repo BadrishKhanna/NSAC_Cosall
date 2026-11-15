@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import lru_cache
 
 import numpy as np
@@ -10,7 +10,7 @@ from download_data import DATA, FILES
 from horizon import horizon_profile, site_from_xy
 from lunar_geometry import load_kernels
 import spiceypy as spice
-from metrics import site_metrics
+from metrics import site_metrics, landing_windows
 
 app = FastAPI(title="Lunar site planner API",
               description="Sun and Earth visibility at lunar sites (SPICE geometry + LOLA terrain).")
@@ -162,3 +162,76 @@ def site(lat: float | None = Query(None, ge=-90, le=90),
             "earth_up": m["earth_up"].astype(int).tolist(),
         }
     return out
+
+
+@app.get("/api/windows")
+def windows(lat: float | None = Query(None, ge=-90, le=90),
+           lon: float | None = Query(None, ge=-360, le=360),
+           x_m: float | None = None, y_m: float | None = None,
+           start: str = "2027-01-01",
+           years: int = Query(5, ge=1, le=15),
+           eval_days: int = Query(60, ge=10, le=365),
+           per_year: int = Query(2, ge=1, le=6),
+           step_hours: float = Query(3.0, ge=0.5, le=24.0),
+           sun_limb_deg: float = Query(0.27, ge=0.0, le=1.0),
+           earth_limb_deg: float = Query(0.0, ge=0.0, le=1.0),
+           observer_height_m: float = Query(2.0, ge=0.0, le=50.0)):
+    """Scans candidate landing dates for one site and recommends the best `per_year`
+    per year, each scored by the site's power/comms metrics over the following
+    `eval_days` days (the mission's early, most survivability-critical window).
+    Also returns the full day-by-day quality curve for the whole scan range, so a
+    chart can show why those dates were picked, not just the picks themselves.
+    Give the site as lat and lon (degrees), or as x_m and y_m (DEM meters)."""
+    if x_m is not None and y_m is not None:
+        try:
+            lat, lon = (float(v) for v in site_from_xy(x_m, y_m))
+        except Exception:
+            raise HTTPException(400, "x_m, y_m are outside the terrain map.")
+        if lat > TERRAIN_LAT_MAX:
+            raise HTTPException(400, "x_m, y_m are outside the terrain map (south of 80S only).")
+    elif lat is None or lon is None:
+        raise HTTPException(400, "Give lat and lon, or x_m and y_m.")
+    if abs(lat) > 89.98:
+        raise HTTPException(400, "Site must be at least 0.02 degrees from the pole.")
+    try:
+        t0 = datetime.strptime(start, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(400, "start must be a date like 2027-01-01.")
+    if not (MIN_DATE <= t0 <= MAX_DATE):
+        raise HTTPException(400, "start must be between 1960-01-01 and 2050-12-31.")
+    if years * 365 + eval_days > (MAX_DATE - t0).days:
+        raise HTTPException(400, "The scan range (years + eval_days) runs past 2050-12-31; "
+                                 "use fewer years, a shorter eval_days, or an earlier start.")
+    if abs(24.0 / step_hours - round(24.0 / step_hours)) > 1e-6:
+        raise HTTPException(400, "step_hours must divide 24 evenly (for example 1, 2, 3, 4, 6, 8, 12 or 24).")
+
+    lat_r, lon_r = round(lat, 4), round(lon, 4)
+    az, el, terrain = _horizon(lat_r, lon_r, observer_height_m)
+    try:
+        picks, curve = landing_windows(
+            lat_r, lon_r, f"{start} 00:00:00 UTC", years, eval_days, per_year, step_hours,
+            sun_limb_deg=sun_limb_deg, observer_height_m=observer_height_m,
+            earth_limb_deg=earth_limb_deg, horizon=(az, el), max_points=MAX_POINTS,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+
+    def _fmt(day, p):
+        d = (t0 + timedelta(days=int(day))).strftime("%Y-%m-%d")
+        return {"landing_date": d, **{k: round(float(v), 2) for k, v in p.items() if k != "day"}}
+
+    return {
+        "site": {"lat": lat_r, "lon": lon_r, "terrain": terrain},
+        "assumptions": {"start": start, "years": years, "eval_days": eval_days, "per_year": per_year,
+                        "step_hours": step_hours, "sun_limb_deg": sun_limb_deg,
+                        "earth_limb_deg": earth_limb_deg, "observer_height_m": observer_height_m,
+                        "score_formula": "both_pct - 2*longest_dark_days - 2*longest_comms_gap_days"},
+        "windows": [_fmt(p["day"], p) for p in picks],
+        "curve": {
+            "dates": [(t0 + timedelta(days=int(c["day"]))).strftime("%Y-%m-%d") for c in curve],
+            "sun_lit_pct": _r([c["sun_lit_pct"] for c in curve], 1),
+            "earth_visible_pct": _r([c["earth_visible_pct"] for c in curve], 1),
+            "both_pct": _r([c["both_pct"] for c in curve], 1),
+        },
+    }
+
