@@ -52,7 +52,9 @@ def kernels_self_test():
 
 MIN_DATE, MAX_DATE = datetime(1960, 1, 1), datetime(2050, 12, 31)
 MAX_POINTS = 20_000          # per request, keeps computation bounded
-TERRAIN_LAT_MAX = -80.0      # the LOLA product used covers 80S to the pole
+TERRAIN_LAT_MAX = -60.0      # terrain (horizons) covers 65S to the pole: 80 m south of 80S, coarser to 65S
+FINE_LAT_MAX = -80.0         # the 80 m LOLA product covers 80S to the pole
+TERRAIN_MAP_LAT_MAX = -60.0  # the terrain map also uses a coarser LOLA map out to 65S
 FLAT_AZ = np.arange(0.0, 360.0, 1.0)
 
 PRESETS = [
@@ -61,7 +63,7 @@ PRESETS = [
      "note": "Candidate site in NASA's Connecting Ridge region, proposed in LPSC 2024 abstract 1695 (209.948 E)."},
     {"id": "apollo11", "name": "Apollo 11 (Tranquility Base)",
      "lat": 0.67408, "lon": 23.47297,
-     "note": "Geometry only (outside the 80S terrain product). Coordinates: Davies and Colvin 2000."},
+     "note": "Geometry only (outside the terrain map). Coordinates: Davies and Colvin 2000."},
     {"id": "shackleton-ridge", "name": "Ridge near Shackleton (best cell from our scan)",
      "lat": -89.491, "lon": -138.674, "x_m": -10200.0, "y_m": -11600.0,
      "note": "Highest-lit cell in a 200 m zoom scan (2027, Sun upper edge, 2 m height)."},
@@ -71,6 +73,21 @@ PRESETS = [
     {"id": "nobile-rim-2", "name": "Nobile Rim 2 (candidate site)",
      "lat": -84.20156, "lon": 60.69989,
      "note": "Top-ranked site in the Nobile Rim 2 region, Pena-Asensio et al., Acta Astronautica."},
+    {"id": "chandrayaan3", "name": "Chandrayaan-3 (Shiv Shakti Point)",
+     "lat": -69.3733, "lon": 32.3191,
+     "note": "Vikram lander, ISRO, landed 23 Aug 2023. Approximate coordinates (LRO imagery); terrain here is the coarser 65S-80S map."},
+    {"id": "chandrayaan2", "name": "Chandrayaan-2 Vikram (impact site)",
+     "lat": -70.8810, "lon": 22.7840,
+     "note": "Vikram crashed here on 7 Sep 2019 (found by LRO). Approximate coordinates; coarser terrain."},
+    {"id": "im1-odysseus", "name": "IM-1 Odysseus (Malapert A)",
+     "lat": -80.1297, "lon": 1.4403,
+     "note": "Intuitive Machines, landed 22 Feb 2024, tipped over. Approximate coordinates (LRO imagery)."},
+    {"id": "im2-athena", "name": "IM-2 Athena (Mons Mouton)",
+     "lat": -84.7933, "lon": 29.2072,
+     "note": "Intuitive Machines, landed 6 Mar 2025 near the Mons Mouton plateau. Approximate coordinates (LRO imagery)."},
+    {"id": "change4", "name": "Chang'e-4 (Von Karman crater)",
+     "lat": -45.4561, "lon": 177.5885,
+     "note": "Far side, landed 3 Jan 2019. Geometry only (outside the terrain map); the far side has no direct Earth view."},
 ]
 
 
@@ -153,7 +170,7 @@ def site(lat: float | None = Query(None, ge=-90, le=90),
         except Exception:
             raise HTTPException(400, "x_m, y_m are outside the terrain map.")
         if lat > TERRAIN_LAT_MAX:
-            raise HTTPException(400, "x_m, y_m are outside the terrain map (south of 80S only).")
+            raise HTTPException(400, "x_m, y_m are outside the terrain map (south of 65S only).")
     elif lat is None or lon is None:
         raise HTTPException(400, "Give lat and lon, or x_m and y_m.")
     if abs(lat) > 89.98:
@@ -173,7 +190,8 @@ def site(lat: float | None = Query(None, ge=-90, le=90),
                      sun_limb_deg=sun_limb_deg, observer_height_m=observer_height_m,
                      earth_limb_deg=earth_limb_deg, horizon=(az, el))
     out = {
-        "site": {"lat": lat_r, "lon": lon_r, "terrain": terrain},
+        "site": {"lat": lat_r, "lon": lon_r, "terrain": terrain,
+                 "terrain_res_m": (80 if lat_r <= FINE_LAT_MAX else 240) if terrain else None},
         "assumptions": {"start": start, "days": days, "step_hours": step_hours,
                         "sun_limb_deg": sun_limb_deg, "earth_limb_deg": earth_limb_deg,
                         "observer_height_m": observer_height_m},
@@ -204,10 +222,10 @@ def terrain(lat: float = Query(..., ge=-90, le=90),
             lon: float = Query(..., ge=-360, le=360),
             half_km: float = Query(30.0, ge=2.0, le=100.0),
             size: int = Query(160, ge=40, le=240)):
-    """Top-down elevation grid (LOLA 80 m DEM) around a point, for the Orbit view's terrain
+    """Top-down elevation grid (LOLA 80 m DEM, plus a coarser one, 240 m, from 80S to 65S) around a point, for the Orbit view's terrain
     map. It does not depend on the date, and it does not use SPICE, so it is not serialized."""
-    if lat > TERRAIN_LAT_MAX:
-        raise HTTPException(400, "No terrain data here (the LOLA map covers 80S to the pole).")
+    if lat > TERRAIN_MAP_LAT_MAX:
+        raise HTTPException(400, "No terrain data here (the terrain map covers 65S to the pole).")
     try:
         return _terrain(round(lat, 4), round(lon, 4), round(half_km, 1), size)
     except ValueError as e:
@@ -241,7 +259,7 @@ def windows(lat: float | None = Query(None, ge=-90, le=90),
         except Exception:
             raise HTTPException(400, "x_m, y_m are outside the terrain map.")
         if lat > TERRAIN_LAT_MAX:
-            raise HTTPException(400, "x_m, y_m are outside the terrain map (south of 80S only).")
+            raise HTTPException(400, "x_m, y_m are outside the terrain map (south of 65S only).")
     elif lat is None or lon is None:
         raise HTTPException(400, "Give lat and lon, or x_m and y_m.")
     if abs(lat) > 89.98:
@@ -274,7 +292,8 @@ def windows(lat: float | None = Query(None, ge=-90, le=90),
         return {"landing_date": d, **{k: round(float(v), 2) for k, v in p.items() if k != "day"}}
 
     return {
-        "site": {"lat": lat_r, "lon": lon_r, "terrain": terrain},
+        "site": {"lat": lat_r, "lon": lon_r, "terrain": terrain,
+                 "terrain_res_m": (80 if lat_r <= FINE_LAT_MAX else 240) if terrain else None},
         "assumptions": {"start": start, "years": years, "eval_days": eval_days, "per_year": per_year,
                         "step_hours": step_hours, "sun_limb_deg": sun_limb_deg,
                         "earth_limb_deg": earth_limb_deg, "observer_height_m": observer_height_m,

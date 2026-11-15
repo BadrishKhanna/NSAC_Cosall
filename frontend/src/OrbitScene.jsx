@@ -517,7 +517,7 @@ export default function OrbitScene({ site, active = true }) {
           <h3>{site.name}</h3>
           {siteStatus ? (
             <>
-              {!siteStatus.terrain && <p className="orbit-hint">No terrain data here; horizon assumed flat.</p>}
+              {!siteStatus.terrain && <p className="orbit-hint">No terrain data here (north of 60&deg;S); horizon assumed flat.</p>}
               <SnapshotChip
                 kind="sun" up={siteStatus.sunUp} elevation={siteStatus.sunEl} label="Sun"
                 upText="power available" downText="no direct sunlight"

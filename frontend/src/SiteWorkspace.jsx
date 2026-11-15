@@ -183,7 +183,7 @@ export default function SiteWorkspace({ presets, selection, onSelectionChange, o
             </p>
             {!result.site.terrain && (
               <p className="badge-flat">
-                No terrain data at this site (north of 80{"\u00b0"}S). Horizon assumed flat.
+                No terrain data at this site (north of 60{"\u00b0"}S). Horizon assumed flat.
               </p>
             )}
 
@@ -285,7 +285,9 @@ export default function SiteWorkspace({ presets, selection, onSelectionChange, o
                 <dt>Terrain</dt>
                 <dd>
                   {result.site.terrain
-                    ? "NASA LOLA elevation, 80 m pixels, out to 100 km"
+                    ? (result.site.terrain_res_m === 240
+                      ? "NASA LOLA elevation, about 240 m pixels here (coarser than the 80 m map south of 80\u00b0S), out to 100 km"
+                      : "NASA LOLA elevation, 80 m pixels, out to 100 km")
                     : "None available; treated as flat"}
                 </dd>
               </div>

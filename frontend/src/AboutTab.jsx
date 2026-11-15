@@ -149,7 +149,7 @@ const LIMITS = [
     text: "Site geometry uses a spherical Moon. Terrain enters only through the horizon around each site (rays every 1\u00b0, out to 100 km).",
   },
   {
-    lead: "Terrain only south of 80\u00b0S.",
+    lead: "Terrain only south of 60\u00b0S.",
     text: "The elevation model stops there. Sites further north, such as Apollo 11, are computed with a flat horizon and are flagged as such.",
   },
   {

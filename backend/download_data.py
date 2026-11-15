@@ -20,6 +20,8 @@ FILES = [
     ("moon_pa_de440_200625.bpc", f"{NAIF}/pck/moon_pa_de440_200625.bpc", 100_000),
     ("moon_de440_220930.tf", f"{NAIF}/fk/satellites/a_old_versions/moon_de440_220930.tf", 2_000),
     ("LDEM_80S_80MPP_ADJ.TIF", "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_80S_80MPP_ADJ.TIF", 100_000_000),
+    # Coarser terrain from 60S to the pole (240 m/pixel); used for the 65S-80S band.
+    ("LDEM_60S_240MPP_ADJ.TIF", "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_60S_240MPP_ADJ.TIF", 100_000_000),
 ]
 # Every SPICE text kernel (.tls, .tpc, .tf) starts with this exact header; every SPICE
 # binary kernel built on the DAF format (.bsp, .bpc) starts with this one. A file that

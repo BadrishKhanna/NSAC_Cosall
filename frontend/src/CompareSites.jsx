@@ -309,7 +309,7 @@ export default function CompareSites({ presets, start, sunEdge, heightM, days, h
 
         {showFlatNote && (
           <p className="badge-flat">
-            Sites north of 80&deg;S have no terrain data and use a flat horizon, so they are not
+            Sites north of 60&deg;S have no terrain data and use a flat horizon, so they are not
             directly comparable with terrain-masked polar sites.
           </p>
         )}

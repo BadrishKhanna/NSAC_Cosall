@@ -294,9 +294,9 @@ export default function TerrainMap({ site, onClose }) {
         </p>
       )}
       <p className="orbit-hint">
-        Real LOLA terrain, 80 m resolution, seen from above. Heights are measured from a reference
+        Real LOLA terrain, 240 m resolution from 60-80S,80 m resolution from 80-90S seen from above. Heights are measured from a reference
         sphere of 1,737.4 km. Colors show relative height inside this map, not water. The date does
-        not change terrain. Coverage is 80&deg;S to the pole.
+        not change terrain. Coverage is 60&deg;S to the pole.
       </p>
     </div>
   );
