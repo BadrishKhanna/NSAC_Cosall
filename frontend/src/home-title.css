@@ -1,0 +1,92 @@
+/* The Home page title as a link to the story. Everything that appears on hover is absolutely
+   positioned, so the word keeps exactly the size and place it had before. */
+
+.home-title-link {
+  position: relative;
+  display: inline-block;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  --ht-ink: var(--sky-ink, #b9b6ae);
+}
+.home-title-link:focus-visible { outline: 2px solid var(--ht-ink); outline-offset: 10px; }
+
+.ht-word { display: inline-block; transition: opacity 0.5s ease; }
+
+/* caption above the word, where the hero already has empty space */
+.ht-cap {
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  margin-bottom: 0.4rem;
+  white-space: nowrap;
+  font: 400 15px/1.2 var(--font-data, "Archivo", sans-serif);
+  letter-spacing: 0;
+  color: var(--ht-ink);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.4s ease 0.35s, transform 0.4s ease 0.35s;
+}
+
+/* the horizon, drawn under the word and a little past it */
+.ht-line {
+  position: absolute;
+  left: 0;
+  bottom: -0.06em;
+  width: calc(100% + 0.62em);
+  height: 1px;
+  background: var(--ht-ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.55s ease;
+}
+
+/* the lander stands on the line, just right of the word */
+.ht-lander {
+  position: absolute;
+  left: calc(100% + 0.12em);
+  bottom: -0.06em;
+  width: 0.5em;
+  height: auto;
+  color: var(--ht-ink);
+  opacity: 0;
+  transform: translateY(-1.5em);
+  transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) 0.2s, opacity 0.25s ease 0.2s;
+}
+.ht-plume { opacity: 0; }
+
+@keyframes ht-burn {
+  0% { opacity: 0.9; }
+  70% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+
+/* the shown state: pointer hover, keyboard focus, or the one-time touch hint */
+@media (hover: hover) {
+  .home-title-link:hover .ht-word { opacity: 0.7; }
+  .home-title-link:hover .ht-cap { opacity: 1; transform: none; }
+  .home-title-link:hover .ht-line { transform: scaleX(1); }
+  .home-title-link:hover .ht-lander { opacity: 1; transform: none; }
+  .home-title-link:hover .ht-plume { animation: ht-burn 0.9s ease-out 0.2s both; }
+}
+.home-title-link:focus-visible .ht-word,
+.home-title-link.is-hint .ht-word { opacity: 0.7; }
+.home-title-link:focus-visible .ht-cap,
+.home-title-link.is-hint .ht-cap { opacity: 1; transform: none; }
+.home-title-link:focus-visible .ht-line,
+.home-title-link.is-hint .ht-line { transform: scaleX(1); }
+.home-title-link:focus-visible .ht-lander,
+.home-title-link.is-hint .ht-lander { opacity: 1; transform: none; }
+.home-title-link:focus-visible .ht-plume,
+.home-title-link.is-hint .ht-plume { animation: ht-burn 0.9s ease-out 0.2s both; }
+
+@media (max-width: 760px) {
+  .ht-cap { font-size: 13px; }
+}
+
+/* reduced motion: no drop and no drawing, only the caption fades in */
+@media (prefers-reduced-motion: reduce) {
+  .ht-line, .ht-lander { display: none; }
+  .ht-cap { transform: none; transition: opacity 0.2s ease; }
+  .ht-word { transition: none; }
+}

@@ -1,12 +1,12 @@
 import { SatelliteHeroArt } from "./HeroArt.jsx";
-
+import HomeTitle from "./HomeTitle.jsx";
 export default function HomeTab({ go }) {
   return (
     <>
       <header className="home-hero">
         <SatelliteHeroArt />
         <div className="home-hero-inner">
-          <h1>Cosall</h1>
+            <HomeTitle />
           <p className="lede">
             Compare lunar south-pole landing sites and dates: how much sunlight, how long Earth is
             in view, and the terrain in between. Built for mission planners, educators and the
