@@ -12,6 +12,7 @@ from horizon import horizon_profile, site_from_xy
 from lunar_geometry import load_kernels
 import spiceypy as spice
 from metrics import site_metrics, landing_windows
+from terrain_map import terrain_window
 
 app = FastAPI(title="Lunar site planner API",
               description="Sun and Earth visibility at lunar sites (SPICE geometry + LOLA terrain).")
@@ -191,6 +192,28 @@ def site(lat: float | None = Query(None, ge=-90, le=90),
             "earth_up": m["earth_up"].astype(int).tolist(),
         }
     return out
+
+
+@lru_cache(maxsize=64)
+def _terrain(lat, lon, half_km, size):
+    return terrain_window(lat, lon, half_km, size)
+
+
+@app.get("/api/terrain")
+def terrain(lat: float = Query(..., ge=-90, le=90),
+            lon: float = Query(..., ge=-360, le=360),
+            half_km: float = Query(30.0, ge=2.0, le=100.0),
+            size: int = Query(160, ge=40, le=240)):
+    """Top-down elevation grid (LOLA 80 m DEM) around a point, for the Orbit view's terrain
+    map. It does not depend on the date, and it does not use SPICE, so it is not serialized."""
+    if lat > TERRAIN_LAT_MAX:
+        raise HTTPException(400, "No terrain data here (the LOLA map covers 80S to the pole).")
+    try:
+        return _terrain(round(lat, 4), round(lon, 4), round(half_km, 1), size)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception:
+        raise HTTPException(503, "The terrain data is not available on this server.")
 
 
 @app.get("/api/windows")

@@ -4,6 +4,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { getJSON, siteQuery } from "./api.js";
 import SnapshotChip from "./SnapshotChip.jsx";
 import SiteSkyView from "./SiteSkyView.jsx";
+import TerrainMap from "./TerrainMap.jsx";
 
 // One scene unit = this many real kilometers. Chosen so the Earth (radius 6371 km)
 // renders at a comfortable size; the true Earth-Moon distance then falls out of the
@@ -91,6 +92,7 @@ export default function OrbitScene({ site, active = true }) {
   const [siteError, setSiteError] = useState(false);
   // "space": the Earth-Moon-Sun scene. "sky": the same clock, seen from the landing site.
   const [mode, setMode] = useState("space");
+  const [terrainOpen, setTerrainOpen] = useState(false); // the terrain map panel
 
   // --- Three.js setup: runs once ---------------------------------------
   useEffect(() => {
@@ -530,8 +532,13 @@ export default function OrbitScene({ site, active = true }) {
           ) : (
             <p className="note-line">Loading&hellip;</p>
           )}
+          <button type="button" className="btn terrain-open" onClick={() => setTerrainOpen(true)} disabled={terrainOpen}>
+            Terrain map
+          </button>
         </div>
       )}
+
+      {terrainOpen && <TerrainMap site={site} onClose={() => setTerrainOpen(false)} />}
 
       {errorMsg && <p className="note-line error-line orbit-error">{errorMsg}</p>}
     </div>
