@@ -952,3 +952,96 @@ aside .cap {
 .launch-outlook h2 {
   margin-bottom: 8px;
 }
+
+
+/* Compare sites (Site planner tab) -------------------------------------- */
+.cmp-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin: 20px 0 24px;
+}
+.cmp-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cmp-slot-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+.cmp-slot .field {
+  min-width: 0;
+}
+.cmp-sheet {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 24px 28px 22px;
+  margin-top: 20px;
+  transition: opacity 0.15s ease;
+}
+.cmp-stale {
+  opacity: 0.55;
+}
+.cmp-scroll {
+  overflow-x: auto;
+}
+table.metrics.cmp-table {
+  margin-top: 0;
+  min-width: 480px;
+}
+table.metrics.cmp-table thead th,
+table.metrics.cmp-table thead td {
+  text-align: right;
+  vertical-align: bottom;
+  font-weight: 500;
+  border-top: none;
+  padding: 0 0 10px 12px;
+}
+table.metrics.cmp-table tbody td {
+  padding-left: 12px;
+}
+table.metrics td.cmp-best {
+  font-weight: 700;
+}
+.cmp-mark {
+  color: var(--both);
+}
+.cmp-flat {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--risk);
+}
+.cmp-sheet .badge-flat {
+  margin-top: 16px;
+}
+.cmp-sheet .summary {
+  margin-top: 20px;
+}
+.cmp-ribbons {
+  margin-top: 8px;
+}
+.cmp-ribbon h3,
+.cmp-horizon h3 {
+  font-size: 16px;
+  margin-top: 22px;
+}
+.cmp-ribbon:not(:last-child) .ribbon-cap {
+  display: none;
+}
+.cmp-ribbon .ribbon {
+  margin-top: 8px;
+}
+.cmp-details {
+  margin-top: 26px;
+}
+.cmp-details summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+.cmp-horizon .horizon-fig {
+  margin-top: 10px;
+}
