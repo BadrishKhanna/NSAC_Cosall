@@ -43,7 +43,7 @@ PRESETS = [
     {"id": "shackleton-ridge", "name": "Ridge near Shackleton (best cell from our scan)",
      "lat": -89.491, "lon": -138.674, "x_m": -10200.0, "y_m": -11600.0,
      "note": "Highest-lit cell in a 200 m zoom scan (2027, Sun upper edge, 2 m height)."},
-         {"id": "connecting-ridge", "name": "Connecting Ridge (candidate site)",
+    {"id": "connecting-ridge", "name": "Connecting Ridge (candidate site)",
      "lat": -89.53432, "lon": -150.05233,
      "note": "Candidate site in NASA's Connecting Ridge region, proposed in LPSC 2024 abstract 1695 (209.948 E)."},
     {"id": "peak-near-shackleton", "name": "Peak Near Shackleton (candidate site)",
