@@ -1310,3 +1310,18 @@ table.about-table tbody th {
   color: inherit;
   text-underline-offset: 3px;
 }
+
+/* Music button, far right of the top bar ------------------------------------ */
+.tabbar .music-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+}
+.tabbar .music-btn svg {
+  display: block;
+}
+.tabbar .music-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
