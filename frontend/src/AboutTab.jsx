@@ -6,16 +6,16 @@ import { HorizonHeroArt } from "./HeroArt.jsx";
 
 // Replace this image: either overwrite frontend/public/about-placeholder.svg, or drop a
 // photo into frontend/public/ and change the path (and the alt text) here.
-const ABOUT_IMAGE_URL = "/about-placeholder.svg";
-const ABOUT_IMAGE_ALT = "Placeholder image: replace with a photo of the team or the project";
+const ABOUT_IMAGE_URL = "/Cosall_globe_moon.png";
+const ABOUT_IMAGE_ALT = "Logo";
 
 // Replace with the real team. Add or remove lines freely. Optional: add
 // photo: "/team/name.jpg" (a file in frontend/public/team/) to show a photo instead of
 // initials.
 const TEAM = [
-  { name: "Team member 1", role: "Role" },
-  { name: "Team member 2", role: "Role" },
-  { name: "Team member 3", role: "Role" },
+  { name: "Badrish Khanna R R", role: "Lead" },
+  { name: "Sharan S B", role: "Lead 2" },
+  
 ];
 
 function initialsOf(name) {
