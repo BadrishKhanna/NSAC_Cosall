@@ -20,6 +20,7 @@ dist/
 *.tif
 *.tiff
 *.img
+fort.*
 
 # OS / editor junk
 .DS_Store
