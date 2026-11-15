@@ -1301,3 +1301,12 @@ table.about-table tbody th {
 .btn.btn-quiet:hover {
   border-color: var(--ink);
 }
+
+/* About: spacing and links in the new sections */
+.about-row-body > p + .about-team {
+  margin-top: 24px;
+}
+.about-credits a {
+  color: inherit;
+  text-underline-offset: 3px;
+}

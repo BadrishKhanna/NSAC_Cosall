@@ -18,6 +18,18 @@ const TEAM = [
   
 ];
 
+// Short intro for the "Who are we?" section. Replace with your own words.
+const WHO_TEXT =
+  "Cosall is a team of undergraduate students from Lovely Professional University, India. We are passionate towards contributing to the field of astronomy through engineering and that is the reason why we are here in this edition of NASA Space Apps Challenge."
+
+// Contact details. Replace the placeholders. Leave out any line you don't want to show.
+// Links starting with "mailto:" open the email app; others open in a new tab.
+const CONTACTS = [
+  { what: "Email", who: "badrishofficial@gmail.com", href: "mailto:badrishofficial@gmail.com" },
+  { what: "Source code", who: "github.com/BadrishKhanna/NSAC_Cosall", href: "https://github.com/BadrishKhanna/NSAC_Cosall" },
+  { what: "Live site", who: "cosall.onrender.com", href: "https://cosall.onrender.com" },
+];
+
 function initialsOf(name) {
   const parts = name.trim().split(/\s+/);
   const first = parts[0]?.[0] ?? "";
@@ -217,20 +229,8 @@ export default function AboutTab() {
           <img src={ABOUT_IMAGE_URL} alt={ABOUT_IMAGE_ALT} />
         </figure>
 
-        <Row id="about-intent-h" title="Why we built it" blurb="A first answer you can check.">
-          <p className="lede about-lede">
-            Choosing where and when to land near the lunar south pole comes down to two questions:
-            how much sunlight a site gets, and how long Earth stays in view. The terrain decides both.
-          </p>
-          <p className="body-text">
-            Cosall puts those answers in one place, for mission planners, educators and anyone
-            curious about the Moon. We built it for the NASA Space Apps Challenge with one aim: a fast
-            first answer that shows its working. Positions come from NASA ephemeris data and horizons
-            from NASA terrain data, and the page tells you what it does and does not model.
-          </p>
-        </Row>
-
-        <Row id="about-team-h" title="The team" blurb="The people behind it.">
+        <Row id="about-who-h" title="Who are we?" blurb="The people behind it.">
+        <p className="body-text">{WHO_TEXT}</p>
           <ul className="about-team">
             {TEAM.map((m) => (
               <li key={m.name}>
@@ -245,6 +245,21 @@ export default function AboutTab() {
             ))}
           </ul>
         </Row>
+
+        <Row id="about-intent-h" title="Why we built it" blurb="A first answer you can check.">
+          <p className="lede about-lede">
+            Choosing where and when to land near the lunar south pole comes down to two questions:
+            how much sunlight a site gets, and how long Earth stays in view. The terrain decides both.
+          </p>
+          <p className="body-text">
+            Cosall puts those answers in one place, for mission planners, educators and anyone
+            curious about the Moon. We built it for the NASA Space Apps Challenge with one aim: a fast
+            first answer that shows its working. Positions come from NASA ephemeris data and horizons
+            from NASA terrain data, and the page tells you what it does and does not model.
+          </p>
+        </Row>
+
+       
 
         <Row
           id="about-validation-h"
@@ -291,6 +306,28 @@ export default function AboutTab() {
               </li>
             ))}
           </ul>
+        </Row>
+
+        <Row id="about-contact-h" title="Contact us" blurb="Questions, feedback or ideas.">
+          <dl className="about-credits">
+            {CONTACTS.map((c) => (
+              <div key={c.what}>
+                <dt>{c.what}</dt>
+                <dd>
+                  {c.href ? (
+                    <a
+                      href={c.href}
+                      {...(c.href.startsWith("mailto:") ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+                    >
+                      {c.who}
+                    </a>
+                  ) : (
+                    c.who
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </Row>
 
         <footer>Built for the NASA Space Apps Challenge.</footer>
