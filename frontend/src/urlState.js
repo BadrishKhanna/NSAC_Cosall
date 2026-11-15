@@ -19,15 +19,32 @@ export function readHash() {
 
 // Update some settings in the hash, leaving the others alone. A null, undefined or empty
 // value removes that setting.
+// Each tab's settings are also remembered here, so a tab that is kept alive in the
+// background can still record changes made while it is hidden (patchParams below), and get
+// its address back when it is shown again (restoreTabParams).
+const tabParams = {};
+
 export function patchParams(tab, patch) {
-  const { params } = readHash();
+  const visible = readHash().tab === tab;
+  const params = visible ? readHash().params : new URLSearchParams(tabParams[tab] || "");
   for (const [key, value] of Object.entries(patch)) {
     if (value === null || value === undefined || value === "") params.delete(key);
     else params.set(key, String(value));
   }
   const qs = params.toString();
+  tabParams[tab] = qs;
+  if (!visible) return; // a hidden tab must not touch the address bar
   const next = `#${tab}${qs ? `?${qs}` : ""}`;
   if (window.location.hash !== next) window.history.replaceState(null, "", next);
+}
+
+// Called when a tab is shown again by a plain tab click (a bare "#planner"): puts its own
+// settings back into the address bar, so "Copy link" still shares what is on screen.
+export function restoreTabParams(tab) {
+  const { tab: current, params } = readHash();
+  const qs = tabParams[tab];
+  if (current !== tab || !qs || [...params].length > 0) return;
+  window.history.replaceState(null, "", `#${tab}?${qs}`);
 }
 
 export async function copyCurrentLink() {

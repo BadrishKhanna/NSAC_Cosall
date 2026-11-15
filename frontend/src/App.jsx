@@ -5,7 +5,7 @@ import SiteWorkspace from "./SiteWorkspace.jsx";
 import LaunchPlanner from "./LaunchPlanner.jsx";
 import AboutTab from "./AboutTab.jsx";
 import { CUSTOM } from "./SitePicker.jsx";
-import { readHash, selectionFromParams } from "./urlState.js";
+import { readHash, selectionFromParams, restoreTabParams } from "./urlState.js";
 import MusicToggle from "./MusicToggle.jsx";
 // Three.js is sizeable, so the orbit scene is loaded only when the tab is opened,
 // rather than blocking the initial page load.
@@ -39,10 +39,23 @@ function useHashTab() {
   };
   const [tab, setTab] = useState(read);
   const [linkKey, setLinkKey] = useState(0);
+  // Tabs that have been opened. Orbit, Site planner and Launch planner stay mounted (hidden)
+  // once opened, so switching away and back keeps their results, the 3D scene and the clock.
+  const [visited, setVisited] = useState(() => new Set([read()]));
   useEffect(() => {
     const onHash = () => {
-      setTab(read());
-      setLinkKey((k) => k + 1);
+      const next = read();
+      setTab(next);
+      if (window.location.hash.includes("?")) {
+        // A link with settings (pasted, or a button like "Plan this site"): the planners start
+        // over from it. Only Orbit, which has no settings in the link, is kept.
+        setLinkKey((k) => k + 1);
+        setVisited((prev) => new Set([next, ...(prev.has("orbit") ? ["orbit"] : [])]));
+      } else {
+        // A plain tab click: keep everything, just show the tab.
+        setVisited((prev) => (prev.has(next) ? prev : new Set(prev).add(next)));
+        restoreTabParams(next);
+      }
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
@@ -50,7 +63,7 @@ function useHashTab() {
   const go = (id) => {
     window.location.hash = id;
   };
-  return [tab, go, linkKey];
+  return [tab, go, linkKey, visited];
 }
 
 // Asks the server whether it is up. Free hosting sleeps when idle, so a slow first answer
@@ -111,7 +124,7 @@ function statusText(server) {
 }
 
 export default function App() {
-  const [tab, go, linkKey] = useHashTab();
+  const [tab, go, linkKey, visited] = useHashTab();
   const server = useServer();
   const [presets, setPresets] = useState(null);
   const [presetError, setPresetError] = useState(false);
@@ -188,14 +201,16 @@ export default function App() {
 
       {tab === "home" && <HomeTab go={go} />}
 
-      {tab === "orbit" && (
-        <Suspense fallback={<div className="orbit-fullscreen orbit-loading" aria-hidden="true" />}>
-          <OrbitScene site={selectedSite} />
-        </Suspense>
+      {visited.has("orbit") && (
+        <div style={{ display: tab === "orbit" ? "contents" : "none" }}>
+          <Suspense fallback={<div className="orbit-fullscreen orbit-loading" aria-hidden="true" />}>
+            <OrbitScene site={selectedSite} active={tab === "orbit"} />
+          </Suspense>
+        </div>
       )}
 
-      {tab === "planner" && (
-        <main className="page planner-page">
+      {visited.has("planner") && (
+        <main className="page planner-page" hidden={tab !== "planner"}>
           {presets && (
             <SiteWorkspace
               key={linkKey}
@@ -212,8 +227,8 @@ export default function App() {
         </main>
       )}
 
-      {tab === "launch" && (
-        <main className="page planner-page">
+      {visited.has("launch") && (
+        <main className="page planner-page" hidden={tab !== "launch"}>
           {presets && (
             <LaunchPlanner
               key={linkKey}
